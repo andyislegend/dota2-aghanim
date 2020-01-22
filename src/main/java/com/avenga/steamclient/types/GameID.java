@@ -1,12 +1,23 @@
 package com.avenga.steamclient.types;
 
 import com.avenga.steamclient.util.Utils;
-import com.avenga.steamclient.util.compare.ObjectsCompat;
+
+import java.util.Objects;
 
 /**
  * This 64bit structure represents an app, mod, shortcut, or p2p file on the Steam network.
  */
 public class GameID {
+
+    private final static int DEFAULT_APPLICATION_ID = 0;
+    private final static int APPLICATION_BIT_OFFSET = 0;
+    private final static long APPLICATION_BIT_MASK = 0xFFFFFFL;
+    private final static int APPLICATION_TYPE_BIT_OFFSET = 24;
+    private final static long APPLICATION_TYPE_BIT_MASK = 0xFFL;
+    private final static int MOD_BIT_OFFSET = 32;
+    private final static int MOD_APPLICATION_TYPE_BIT_OFFSET = 63;
+    private final static long ACCOUNT_ID_MASK = 0xFFFFFFFFL;
+    private final static long DEFAULT_MOD_MASK_VALUE = 1L;
 
     private BitVector64 gameId;
 
@@ -14,7 +25,7 @@ public class GameID {
      * Initializes a new instance of the {@link GameID} class.
      */
     public GameID() {
-        this(0);
+        this(DEFAULT_APPLICATION_ID);
     }
 
     /**
@@ -29,21 +40,21 @@ public class GameID {
     /**
      * Initializes a new instance of the {@link GameID} class.
      *
-     * @param nAppId The 32bit app id to assign this GameID from.
+     * @param applicationId The 32bit app id to assign this GameID from.
      */
-    public GameID(int nAppId) {
-        this((long) nAppId);
+    public GameID(int applicationId) {
+        this((long) applicationId);
     }
 
     /**
      * Initializes a new instance of the {@link GameID} class.
      *
-     * @param nAppId  The base app id of the mod.
+     * @param applicationId  The base app id of the mod.
      * @param modPath The game folder name of the mod.
      */
-    public GameID(int nAppId, String modPath) {
-        this(0);
-        setAppID(nAppId);
+    public GameID(int applicationId, String modPath) {
+        this(DEFAULT_APPLICATION_ID);
+        setAppID(applicationId);
         setAppType(GameType.GAME_MOD);
         setModID(Utils.crc32(modPath));
     }
@@ -52,17 +63,17 @@ public class GameID {
      * Initializes a new instance of the {@link GameID} class.
      *
      * @param exePath The path to the executable, usually quoted.
-     * @param appName The name of the application shortcut.
+     * @param applicationName The name of the application shortcut.
      */
-    public GameID(String exePath, String appName) {
-        this(0);
+    public GameID(String exePath, String applicationName) {
+        this(DEFAULT_APPLICATION_ID);
 
         StringBuilder builder = new StringBuilder();
         if (exePath != null) {
             builder.append(exePath);
         }
-        if (appName != null) {
-            builder.append(appName);
+        if (applicationName != null) {
+            builder.append(applicationName);
         }
 
         setAppID(0);
@@ -94,7 +105,7 @@ public class GameID {
      * @param value The app ID.
      */
     public void setAppID(int value) {
-        gameId.setMask((short) 0, 0xFFFFFFL, value);
+        gameId.setMask((short) APPLICATION_BIT_OFFSET, APPLICATION_BIT_MASK, value);
     }
 
     /**
@@ -103,7 +114,7 @@ public class GameID {
      * @return The app ID.
      */
     public int getAppID() {
-        return (int) gameId.getMask((short) 0, 0xFFFFFFL);
+        return (int) gameId.getMask((short) APPLICATION_BIT_OFFSET, APPLICATION_BIT_MASK);
     }
 
     /**
@@ -112,7 +123,7 @@ public class GameID {
      * @param value The type of the app.
      */
     public void setAppType(GameType value) {
-        gameId.setMask((short) 24, 0xFFL, value.code());
+        gameId.setMask((short) APPLICATION_TYPE_BIT_OFFSET, APPLICATION_TYPE_BIT_MASK, value.code());
     }
 
     /**
@@ -121,7 +132,7 @@ public class GameID {
      * @return The type of the app.
      */
     public GameType getAppType() {
-        return GameType.from((int) gameId.getMask((short) 24, 0xFFL));
+        return GameType.from((int) gameId.getMask((short) APPLICATION_TYPE_BIT_OFFSET, APPLICATION_TYPE_BIT_MASK));
     }
 
     /**
@@ -130,8 +141,8 @@ public class GameID {
      * @param value The mod ID.
      */
     public void setModID(long value) {
-        gameId.setMask((short) 32, 0xFFFFFFFFL, value);
-        gameId.setMask((short) 63, 0xFFL, 1L);
+        gameId.setMask((short) MOD_BIT_OFFSET, ACCOUNT_ID_MASK, value);
+        gameId.setMask((short) MOD_APPLICATION_TYPE_BIT_OFFSET, APPLICATION_TYPE_BIT_MASK, DEFAULT_MOD_MASK_VALUE);
     }
 
     /**
@@ -140,7 +151,7 @@ public class GameID {
      * @return The mod ID.
      */
     public long getModID() {
-        return gameId.getMask((short) 32, 0xFFFFFFFFL);
+        return gameId.getMask((short) MOD_BIT_OFFSET, ACCOUNT_ID_MASK);
     }
 
     /**
@@ -213,7 +224,7 @@ public class GameID {
             return false;
         }
 
-        return ObjectsCompat.equals(gameId.getData(), ((GameID) obj).gameId.getData());
+        return Objects.equals(gameId.getData(), ((GameID) obj).gameId.getData());
     }
 
     /**

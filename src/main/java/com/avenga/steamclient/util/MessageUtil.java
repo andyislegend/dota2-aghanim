@@ -2,9 +2,10 @@ package com.avenga.steamclient.util;
 
 import com.avenga.steamclient.enums.EMsg;
 
-public class MsgUtil {
+public class MessageUtil {
 
     private static final int PROTO_MASK = 0x80000000;
+    private static final long ACCOUNT_ID_MASK = 0xffffffffL;
     private static final int EMSG_MASK = ~PROTO_MASK;
 
     /**
@@ -13,7 +14,7 @@ public class MsgUtil {
      * @param msg The message number.
      * @return The underlying EMsg.
      */
-    public static EMsg getMsg(int msg) {
+    public static EMsg getMessage(int msg) {
         return EMsg.from(msg & EMSG_MASK);
     }
 
@@ -34,7 +35,7 @@ public class MsgUtil {
      * @param protobuf if set to true, the message is protobuf flagged.
      * @return A crafted EMsg, flagged if requested.
      */
-    public static int makeMsg(int msg, boolean protobuf) {
+    public static int makeMessage(int msg, boolean protobuf) {
         if (protobuf) {
             return msg | PROTO_MASK;
         }
@@ -63,6 +64,6 @@ public class MsgUtil {
      * @return <b>true</b> if this message is protobuf flagged; otherwise, <b>false</b>.
      */
     public static boolean isProtoBuf(int msg) {
-        return (msg & 0xffffffffL & PROTO_MASK) > 0;
+        return (msg & ACCOUNT_ID_MASK & PROTO_MASK) > 0;
     }
 }

@@ -9,6 +9,7 @@ import java.util.zip.Checksum;
 public class Utils {
 
     private static final String JAVA_RUNTIME = getSystemProperty("java.runtime.name");
+    private static final int START_OFFSET = 0;
 
     public static EOSType getOSType() {
         if (SystemUtils.IS_OS_WINDOWS_7) {
@@ -20,35 +21,11 @@ public class Utils {
         if (SystemUtils.IS_OS_WINDOWS_10) {
             return EOSType.Windows10;
         }
-        if (SystemUtils.IS_OS_WINDOWS_95) {
-            return EOSType.Win95;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_98) {
-            return EOSType.Win98;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_2000) {
-            return EOSType.Win2000;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_2003) {
-            return EOSType.Win2003;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_2008) {
-            return EOSType.Win2008;
-        }
         if (SystemUtils.IS_OS_WINDOWS_2012) {
             return EOSType.Win2012;
         }
-        if (SystemUtils.IS_OS_WINDOWS_ME) {
-            return EOSType.WinME;
-        }
         if (SystemUtils.IS_OS_WINDOWS_NT) {
             return EOSType.WinNT;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_VISTA) {
-            return EOSType.WinVista;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_XP) {
-            return EOSType.WinXP;
         }
         if (SystemUtils.IS_OS_WINDOWS) {
             return EOSType.WinUnknown;
@@ -120,7 +97,7 @@ public class Utils {
     public static long crc32(String s) {
         Checksum checksum = new CRC32();
         byte[] bytes = s.getBytes();
-        checksum.update(bytes, 0, bytes.length);
+        checksum.update(bytes, START_OFFSET, bytes.length);
         return checksum.getValue();
     }
 }

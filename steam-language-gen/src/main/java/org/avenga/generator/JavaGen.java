@@ -115,7 +115,7 @@ public class JavaGen implements Closeable, Flushable {
                     imports.add(getPackageName("protobufs.steamclient.SteammessagesBase.CMsgProtoBufHeader"));
                 } else if ("protomask".equals(prop.getFlags())) {
                     imports.add(getPackageName("enums.EMsg"));
-                    imports.add(getPackageName("util.MsgUtil"));
+                    imports.add(getPackageName("util.MessageUtil"));
                 }
 
                 if (prop.getType() instanceof StrongSymbol) {
@@ -432,7 +432,7 @@ public class JavaGen implements Closeable, Flushable {
             }
 
             if ("protomask".equals(prop.getFlags())) {
-                writer.writeln("bw.writeInt(MsgUtil.makeMsg(" + propName + ".code(), true));");
+                writer.writeln("bw.writeInt(MessageUtil.makeMessage(" + propName + ".code(), true));");
                 continue;
             }
 
@@ -549,7 +549,7 @@ public class JavaGen implements Closeable, Flushable {
 
             if (prop.getFlags() != null) {
                 if ("protomask".equals(prop.getFlags())) {
-                    writer.writeln(propName + " = MsgUtil.getMsg(br.readInt());");
+                    writer.writeln(propName + " = MessageUtil.getMessage(br.readInt());");
                     continue;
                 }
 

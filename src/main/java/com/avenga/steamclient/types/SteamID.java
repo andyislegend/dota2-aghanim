@@ -2,13 +2,12 @@ package com.avenga.steamclient.types;
 
 import com.avenga.steamclient.enums.EAccountType;
 import com.avenga.steamclient.enums.EUniverse;
-import com.avenga.steamclient.util.CollectionUtils;
-import com.avenga.steamclient.util.Strings;
-import com.avenga.steamclient.util.compare.ObjectsCompat;
+import com.avenga.steamclient.util.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -168,7 +167,7 @@ public class SteamID {
      * @return <b>true</b> if this instance was successfully assigned; otherwise, <b>false</b> if the given string was in an invalid format.
      */
     public boolean setFromString(String steamId, EUniverse eUniverse) {
-        if (Strings.isNullOrEmpty(steamId)) {
+        if (StringUtils.isNullOrEmpty(steamId)) {
             return false;
         }
 
@@ -202,7 +201,7 @@ public class SteamID {
      * @return <b>true</b> if this instance was successfully assigned; otherwise, <b>false</b> if the given string was in an invalid format.
      */
     public boolean setFromSteam3String(String steamId) {
-        if (Strings.isNullOrEmpty(steamId)) {
+        if (StringUtils.isNullOrEmpty(steamId)) {
             return false;
         }
 
@@ -237,7 +236,7 @@ public class SteamID {
         long instance;
 
         String instanceGroup = matcher.group(5);
-        if (!Strings.isNullOrEmpty(instanceGroup)) {
+        if (!StringUtils.isNullOrEmpty(instanceGroup)) {
             instance = Long.parseLong(instanceGroup);
         } else {
             switch (type) {
@@ -262,7 +261,10 @@ public class SteamID {
         } else if (type == UNKNOWN_ACCOUNT_TYPE_CHAR) {
             setAccountType(EAccountType.Invalid);
         } else {
-            setAccountType(CollectionUtils.getKeyByValue(ACCOUNT_TYPE_CHARS, type));
+            setAccountType(ACCOUNT_TYPE_CHARS.entrySet().stream()
+                    .filter(charEntry -> Objects.equals(charEntry.getValue(), type))
+                    .map(Map.Entry::getKey)
+                    .findFirst().orElse(null));
         }
 
         setAccountUniverse(EUniverse.from((int) universe));
@@ -441,11 +443,11 @@ public class SteamID {
     }
 
     public long getAccountID() {
-        return steamID.getMask((short) 0, 0xFFFFFFFFL);
+        return steamID.getMask((short) 0, ACCOUNT_ID_MASK);
     }
 
     public void setAccountID(long accountID) {
-        steamID.setMask((short) 0, 0xFFFFFFFFL, accountID);
+        steamID.setMask((short) 0, ACCOUNT_ID_MASK, accountID);
     }
 
     public long getAccountInstance() {
@@ -595,7 +597,7 @@ public class SteamID {
 
         SteamID sid = (SteamID) obj;
 
-        return ObjectsCompat.equals(steamID.getData(), sid.steamID.getData());
+        return Objects.equals(steamID.getData(), sid.steamID.getData());
     }
 
     /**

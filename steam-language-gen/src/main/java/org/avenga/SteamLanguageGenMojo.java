@@ -13,12 +13,14 @@ import org.avenga.generator.JavaGen;
 import org.avenga.parser.LanguageParser;
 import org.avenga.parser.node.ClassNode;
 import org.avenga.parser.node.EnumNode;
+import org.avenga.parser.node.Node;
 import org.avenga.parser.token.TokenAnalyzer;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -60,31 +62,14 @@ public class SteamLanguageGenMojo extends AbstractMojo {
             var tokens = LanguageParser.tokenizeString(IOUtils.toString(new FileInputStream(inputFile), StandardCharsets.UTF_8), inputFile.getName());
             var root = TokenAnalyzer.analyze(tokens, inputFile.getParent());
 
-            var enums = root.getChildNodes().stream().filter(child -> child instanceof EnumNode).collect(Collectors.toList());
-            var classes = root.getChildNodes().stream().filter(child -> child instanceof ClassNode).collect(Collectors.toList());
+            FileUtils.deleteDirectory(outputFile);
+            addCompileSourceRoot(outputDirectory);
 
             Set<String> flagEnums = new HashSet<>();
-
-            FileUtils.deleteDirectory(outputFile);
-
-            getLog().info("Adding generated sources: " + outputDirectory);
-            project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
-
-            enums.forEach(node -> {
-                var javaGen = new JavaGen(node, packageName + ".enums", packageName, new File(outputFile, " enums"), flagEnums);
-                javaGen.emit();
-                javaGen.flush();
-                javaGen.close();
-
-            });
-
-            classes.forEach(node -> {
-                var javaGen = new JavaGen(node, packageName + ".generated", packageName, new File(outputFile, "generated"), flagEnums);
-                javaGen.emit();
-                javaGen.flush();
-                javaGen.close();
-
-            });
+            getChildNodes(root, EnumNode.class).forEach(node ->
+                    generateJavaClasses(node, packageName, "enums", outputFile, flagEnums));
+            getChildNodes(root, ClassNode.class).forEach(node ->
+                    generateJavaClasses(node, packageName, "generated", outputFile, flagEnums));
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
@@ -96,5 +81,21 @@ public class SteamLanguageGenMojo extends AbstractMojo {
 
     private String getInputFileSuffix() {
         return getPackagePath() + File.separator + Constant.STEAMD_INPUT_FILE;
+    }
+
+    private List<Node> getChildNodes(Node root, Class<? extends Node> clazz) {
+        return root.getChildNodes().stream().filter(child -> child.getClass().equals(clazz) ).collect(Collectors.toList());
+    }
+
+    private void addCompileSourceRoot(File outputDirectory) {
+        getLog().info("Adding generated sources: " + outputDirectory);
+        project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
+    }
+
+    private void generateJavaClasses(Node node, String packageName, String packageSuffix, File outputFile, Set<String> flagEnums) {
+        var javaGen = new JavaGen(node, packageName + "." + packageSuffix, packageName, new File(outputFile, packageSuffix), flagEnums);
+        javaGen.emit();
+        javaGen.flush();
+        javaGen.close();
     }
 }
