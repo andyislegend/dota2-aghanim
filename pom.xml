@@ -58,24 +58,14 @@
                             <includeDirectories>
                                 <include>src/main/protobuf</include>
                             </includeDirectories>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${pom.build.directory}/generated/source/steamd/main/java</source>
-                            </sources>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                    <addSources>main</addSources>
+                                    <cleanOutputFolder>true</cleanOutputFolder>
+                                    <outputDirectory>${project.build.directory}/generated/source/protobuff/main/java</outputDirectory>
+                                </outputTarget>
+                            </outputTargets>
                         </configuration>
                     </execution>
                 </executions>

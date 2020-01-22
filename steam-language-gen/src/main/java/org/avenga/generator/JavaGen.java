@@ -1,6 +1,5 @@
 package org.avenga.generator;
 
-import org.avenga.constant.Constant;
 import org.avenga.exception.ClassGeneratorException;
 import org.avenga.exception.StreamProcessingException;
 import org.avenga.parser.node.ClassNode;
@@ -37,12 +36,14 @@ public class JavaGen implements Closeable, Flushable {
     private JavaFileWriter writer;
     private final Node node;
     private String _package;
+    private String basePackage;
     private File destination;
     private Set<String> flagEnums;
 
-    public JavaGen(Node node, String _package, File destination, Set<String> flagEnums) {
+    public JavaGen(Node node, String _package, String basePackage, File destination, Set<String> flagEnums) {
         this.node = node;
         this._package = _package;
+        this.basePackage = basePackage;
         this.destination = destination;
         this.flagEnums = flagEnums;
     }
@@ -849,6 +850,6 @@ public class JavaGen implements Closeable, Flushable {
     }
 
     private String getPackageName(String suffix) {
-        return suffix.startsWith(".") ? Constant.BASE_PACKAGE_NAME + suffix : Constant.BASE_PACKAGE_NAME + "." + suffix;
+        return suffix.startsWith(".") ? this.basePackage + suffix : this.basePackage + "." + suffix;
     }
 }
