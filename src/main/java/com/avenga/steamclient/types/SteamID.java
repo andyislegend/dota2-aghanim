@@ -4,10 +4,7 @@ import com.avenga.steamclient.enums.EAccountType;
 import com.avenga.steamclient.enums.EUniverse;
 import com.avenga.steamclient.util.StringUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +18,8 @@ public class SteamID {
     private static final Pattern STEAM2_REGEX = Pattern.compile("STEAM_([0-4]):([0-1]):(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern STEAM3_REGEX = Pattern.compile("\\[([AGMPCgcLTIUai]):([0-4]):(\\d+)(:(\\d+))?]");
     private static final Pattern STEAM3_FALLBACK_REGEX = Pattern.compile("\\[([AGMPCgcLTIUai]):([0-4]):(\\d+)(\\((\\d+)\\))?]");
+    private static final List<Character> ZERO_INSTANCE_TYPES = Arrays.asList('g', 'T', 'c', 'L');
+    private static final long DEFAULT_STEAM_ID = 0;
 
     private static final Map<EAccountType, Character> ACCOUNT_TYPE_CHARS;
 
@@ -74,7 +73,7 @@ public class SteamID {
     public static final long ACCOUNT_INSTANCE_MASK = 0x000FFFFFL;
 
     public SteamID() {
-        this(0);
+        this(DEFAULT_STEAM_ID);
     }
 
     public SteamID(long unAccountID, EUniverse eUniverse, EAccountType eAccountType) {
@@ -138,7 +137,7 @@ public class SteamID {
         setAccountType(eAccountType);
 
         if (eAccountType == EAccountType.Clan || eAccountType == EAccountType.GameServer) {
-            setAccountInstance(0L);
+            setAccountInstance(ALL_INSTANCES);
         } else {
             setAccountInstance(DESKTOP_INSTANCE);
         }
@@ -232,41 +231,10 @@ public class SteamID {
         }
 
         char type = typeString.charAt(0);
-
-        long instance;
-
         String instanceGroup = matcher.group(5);
-        if (!StringUtils.isNullOrEmpty(instanceGroup)) {
-            instance = Long.parseLong(instanceGroup);
-        } else {
-            switch (type) {
-                case 'g':
-                case 'T':
-                case 'c':
-                case 'L':
-                    instance = 0;
-                    break;
-                default:
-                    instance = 1;
-                    break;
-            }
-        }
+        long instance = getInstance(instanceGroup, type);
 
-        if (type == 'c') {
-            instance = instance | ChatInstanceFlags.CLAN.code();
-            setAccountType(EAccountType.Chat);
-        } else if (type == 'L') {
-            instance = instance | ChatInstanceFlags.LOBBY.code();
-            setAccountType(EAccountType.Chat);
-        } else if (type == UNKNOWN_ACCOUNT_TYPE_CHAR) {
-            setAccountType(EAccountType.Invalid);
-        } else {
-            setAccountType(ACCOUNT_TYPE_CHARS.entrySet().stream()
-                    .filter(charEntry -> Objects.equals(charEntry.getValue(), type))
-                    .map(Map.Entry::getKey)
-                    .findFirst().orElse(null));
-        }
-
+        initAccountType(type);
         setAccountUniverse(EUniverse.from((int) universe));
         setAccountInstance(instance);
         setAccountID(accId);
@@ -307,7 +275,7 @@ public class SteamID {
      * @return <b>true</b> if this instance is a blank anon account; otherwise, <b>false</b>.
      */
     public boolean isBlankAnonAccount() {
-        return getAccountID() == 0 && isAnonAccount() && this.getAccountInstance() == 0;
+        return getAccountID() == 0 && isAnonAccount() && this.getAccountInstance() == ALL_INSTANCES;
     }
 
     /**
@@ -370,7 +338,7 @@ public class SteamID {
      * @return <b>true</b> if this instance is a lobby; otherwise, <b>false</b>.
      */
     public boolean isLobby() {
-        return getAccountType() == EAccountType.Chat && (getAccountInstance() & (long) ChatInstanceFlags.LOBBY.code()) > 0;
+        return getAccountType() == EAccountType.Chat && (getAccountInstance() & ChatInstanceFlags.LOBBY.code()) > 0;
     }
 
     /**
@@ -430,7 +398,7 @@ public class SteamID {
         }
 
         if (getAccountType() == EAccountType.Clan) {
-            if (getAccountID() == 0 || getAccountInstance() != 0)
+            if (getAccountID() == 0 || getAccountInstance() != ALL_INSTANCES)
                 return false;
         }
 
@@ -540,31 +508,8 @@ public class SteamID {
     }
 
     private String renderSteam3() {
-        Character accountTypeChar = ACCOUNT_TYPE_CHARS.get(getAccountType());
-        if (accountTypeChar == null) {
-            accountTypeChar = UNKNOWN_ACCOUNT_TYPE_CHAR;
-        }
-
-        if (getAccountType() == EAccountType.Chat) {
-            if ((getAccountInstance() & ChatInstanceFlags.CLAN.code()) > 0) {
-                accountTypeChar = 'c';
-            } else if ((getAccountInstance() & ChatInstanceFlags.LOBBY.code()) > 0) {
-                accountTypeChar = 'L';
-            }
-        }
-
-        boolean renderInstance = false;
-
-        switch (getAccountType()) {
-            case AnonGameServer:
-            case Multiseat:
-                renderInstance = true;
-                break;
-
-            case Individual:
-                renderInstance = (getAccountInstance() != DESKTOP_INSTANCE);
-                break;
-        }
+        Character accountTypeChar = getAccountTypeChar();
+        boolean renderInstance = getRenderInstance();
 
         if (renderInstance) {
             return String.format("[%s:%d:%d:%d]", accountTypeChar, getAccountUniverse().code(), getAccountID(), getAccountInstance());
@@ -608,6 +553,68 @@ public class SteamID {
     @Override
     public int hashCode() {
         return steamID.getData().hashCode();
+    }
+
+    private long getInstance(String instanceGroup, char type) {
+        long instance = 1;
+        if (!StringUtils.isNullOrEmpty(instanceGroup)) {
+            instance = Long.parseLong(instanceGroup);
+        } else if (ZERO_INSTANCE_TYPES.contains(type)) {
+            instance =  0;
+        }
+
+        if (type == 'c') {
+            instance = instance | ChatInstanceFlags.CLAN.code();
+        } else if (type == 'L') {
+            instance = instance | ChatInstanceFlags.LOBBY.code();
+        }
+
+        return instance;
+    }
+
+    private void initAccountType(char type) {
+        if (type == 'c') {
+            setAccountType(EAccountType.Chat);
+        } else if (type == 'L') {
+            setAccountType(EAccountType.Chat);
+        } else if (type == UNKNOWN_ACCOUNT_TYPE_CHAR) {
+            setAccountType(EAccountType.Invalid);
+        } else {
+            setAccountType(ACCOUNT_TYPE_CHARS.entrySet().stream()
+                    .filter(charEntry -> Objects.equals(charEntry.getValue(), type))
+                    .map(Map.Entry::getKey)
+                    .findFirst().orElse(null));
+        }
+    }
+
+    private boolean getRenderInstance() {
+        boolean renderInstance = false;
+        var accountType = getAccountType();
+
+        if (accountType.equals(EAccountType.AnonGameServer) || accountType.equals(EAccountType.Multiseat)) {
+            renderInstance = true;
+        } else if (accountType.equals(EAccountType.Individual)) {
+            renderInstance = (getAccountInstance() != DESKTOP_INSTANCE);
+        }
+
+        return renderInstance;
+    }
+
+    private Character getAccountTypeChar() {
+        Character accountTypeChar = ACCOUNT_TYPE_CHARS.get(getAccountType());
+        if (accountTypeChar == null) {
+            accountTypeChar = UNKNOWN_ACCOUNT_TYPE_CHAR;
+        }
+
+        if (getAccountType() == EAccountType.Chat) {
+            if ((getAccountInstance() & ChatInstanceFlags.CLAN.code()) > 0) {
+                accountTypeChar = 'c';
+            } else if ((getAccountInstance() & ChatInstanceFlags.LOBBY.code()) > 0) {
+                accountTypeChar = 'L';
+            }
+        }
+
+        return accountTypeChar;
     }
 
     /**
