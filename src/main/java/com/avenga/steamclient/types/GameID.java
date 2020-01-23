@@ -253,6 +253,11 @@ public class GameID {
     public enum GameType {
 
         /**
+         * Unknown type of the game.
+         */
+        UNKNOWN(Integer.MIN_VALUE),
+
+        /**
          * A Steam application.
          */
         APP(0),
@@ -288,7 +293,7 @@ public class GameID {
                     return e;
                 }
             }
-            return null;
+            return GameType.UNKNOWN;
         }
     }
 }

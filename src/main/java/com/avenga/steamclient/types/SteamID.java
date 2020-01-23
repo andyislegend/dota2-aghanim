@@ -623,6 +623,11 @@ public class SteamID {
     public enum ChatInstanceFlags {
 
         /**
+         * This flag is set for Unknown chat.
+         */
+        UNKNOWN(Long.MIN_VALUE),
+
+        /**
          * This flag is set for clan based chat {@link SteamID SteamIDs}.
          */
         CLAN((SteamID.ACCOUNT_INSTANCE_MASK + 1) >> 1),
@@ -653,7 +658,7 @@ public class SteamID {
                     return e;
                 }
             }
-            return null;
+            return ChatInstanceFlags.UNKNOWN;
         }
     }
 }
