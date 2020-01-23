@@ -12,56 +12,8 @@ public class Utils {
     private static final int START_OFFSET = 0;
 
     public static EOSType getOSType() {
-        if (SystemUtils.IS_OS_WINDOWS_7) {
-            return EOSType.Windows7;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_8) {
-            return EOSType.Windows8;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_10) {
-            return EOSType.Windows10;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_2012) {
-            return EOSType.Win2012;
-        }
-        if (SystemUtils.IS_OS_WINDOWS_NT) {
-            return EOSType.WinNT;
-        }
         if (SystemUtils.IS_OS_WINDOWS) {
             return EOSType.WinUnknown;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_TIGER) {
-            return EOSType.MacOS104;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_LEOPARD) {
-            return EOSType.MacOS105;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_SNOW_LEOPARD) {
-            return EOSType.MacOS106;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_LION) {
-            return EOSType.MacOS107;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_MOUNTAIN_LION) {
-            return EOSType.MacOS108;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_MAVERICKS) {
-            return EOSType.MacOS109;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_YOSEMITE) {
-            return EOSType.MacOS1010;
-        }
-        if (SystemUtils.IS_OS_MAC_OSX_EL_CAPITAN) {
-            return EOSType.MacOS1011;
-        }
-        if (checkOS("Mac OS X", "10.12")) {
-            return EOSType.MacOS1012;
-        }
-        if (checkOS("Mac OS X", "10.13")) {
-            return EOSType.MacOS1013;
-        }
-        if (checkOS("Mac OS X", "10.14")) {
-            return EOSType.MacOS1014;
         }
         if (SystemUtils.IS_OS_MAC) {
             return EOSType.MacOSUnknown;
