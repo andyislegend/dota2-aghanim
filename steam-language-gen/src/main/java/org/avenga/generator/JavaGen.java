@@ -108,9 +108,9 @@ public class JavaGen implements Closeable, Flushable {
                 }
 
                 if ("steamidmarshal".equals(prop.getFlags()) && "long".equals(typeStr)) {
-                    imports.add(getPackageName("types.SteamID"));
+                    imports.add(getPackageName("model.SteamID"));
                 } else if ("gameidmarshal".equals(prop.getFlags()) && "long".equals(typeStr)) {
-                    imports.add(getPackageName("types.GameID"));
+                    imports.add(getPackageName("model.GameID"));
                 } else if ("proto".equals(prop.getFlags())) {
                     imports.add(getPackageName("protobufs.steamclient.SteammessagesBase.CMsgProtoBufHeader"));
                 } else if ("protomask".equals(prop.getFlags())) {

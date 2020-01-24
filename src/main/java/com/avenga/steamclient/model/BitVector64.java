@@ -1,4 +1,4 @@
-package com.avenga.steamclient.types;
+package com.avenga.steamclient.model;
 
 public class BitVector64 {
 
