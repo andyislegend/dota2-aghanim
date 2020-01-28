@@ -1,5 +1,6 @@
-package com.avenga.steamclient.types;
+package com.avenga.steamclient.model;
 
+import com.avenga.steamclient.enums.ChatInstanceFlag;
 import com.avenga.steamclient.enums.EAccountType;
 import com.avenga.steamclient.enums.EUniverse;
 import com.avenga.steamclient.util.StringUtils;
@@ -24,20 +25,18 @@ public class SteamID {
     private static final Map<EAccountType, Character> ACCOUNT_TYPE_CHARS;
 
     static {
-        Map<EAccountType, Character> accountTypeChars = new HashMap<>();
 
-        accountTypeChars.put(EAccountType.AnonGameServer, 'A');
-        accountTypeChars.put(EAccountType.GameServer, 'G');
-        accountTypeChars.put(EAccountType.Multiseat, 'M');
-        accountTypeChars.put(EAccountType.Pending, 'P');
-        accountTypeChars.put(EAccountType.ContentServer, 'C');
-        accountTypeChars.put(EAccountType.Clan, 'g');
-        accountTypeChars.put(EAccountType.Chat, 'T'); // Lobby chat is 'L', Clan chat is 'c'
-        accountTypeChars.put(EAccountType.Invalid, 'I');
-        accountTypeChars.put(EAccountType.Individual, 'U');
-        accountTypeChars.put(EAccountType.AnonUser, 'a');
-
-        ACCOUNT_TYPE_CHARS = Collections.unmodifiableMap(accountTypeChars);
+        ACCOUNT_TYPE_CHARS = Map.of(
+                EAccountType.AnonGameServer, 'A',
+                EAccountType.GameServer, 'G',
+                EAccountType.Multiseat, 'M',
+                EAccountType.Pending, 'P',
+                EAccountType.ContentServer, 'C',
+                EAccountType.Clan, 'g',
+                EAccountType.Chat, 'T', // Lobby chat is 'L', Clan chat is 'c'
+                EAccountType.Invalid, 'I',
+                EAccountType.Individual, 'U',
+                EAccountType.AnonUser, 'a');
     }
 
     public static final char UNKNOWN_ACCOUNT_TYPE_CHAR = 'i';
@@ -338,7 +337,7 @@ public class SteamID {
      * @return <b>true</b> if this instance is a lobby; otherwise, <b>false</b>.
      */
     public boolean isLobby() {
-        return getAccountType() == EAccountType.Chat && (getAccountInstance() & ChatInstanceFlags.LOBBY.code()) > 0;
+        return getAccountType() == EAccountType.Chat && (getAccountInstance() & ChatInstanceFlag.LOBBY.code()) > 0;
     }
 
     /**
@@ -455,7 +454,7 @@ public class SteamID {
 
         SteamID chatID = new SteamID(convertToUInt64());
 
-        chatID.setAccountInstance(ChatInstanceFlags.CLAN.code());
+        chatID.setAccountInstance(ChatInstanceFlag.CLAN.code());
         chatID.setAccountType(EAccountType.Chat);
 
         return chatID;
@@ -467,7 +466,7 @@ public class SteamID {
      * @return the group that this chat ID is associated with, null if this does not represent a group chat
      */
     public SteamID tryGetClanID() {
-        if (isChatAccount() && getAccountInstance() == ChatInstanceFlags.CLAN.code()) {
+        if (isChatAccount() && getAccountInstance() == ChatInstanceFlag.CLAN.code()) {
             SteamID groupID = new SteamID(convertToUInt64());
             groupID.setAccountType(EAccountType.Clan);
             groupID.setAccountInstance(0);
@@ -564,9 +563,9 @@ public class SteamID {
         }
 
         if (type == 'c') {
-            instance = instance | ChatInstanceFlags.CLAN.code();
+            instance = instance | ChatInstanceFlag.CLAN.code();
         } else if (type == 'L') {
-            instance = instance | ChatInstanceFlags.LOBBY.code();
+            instance = instance | ChatInstanceFlag.LOBBY.code();
         }
 
         return instance;
@@ -607,58 +606,13 @@ public class SteamID {
         }
 
         if (getAccountType() == EAccountType.Chat) {
-            if ((getAccountInstance() & ChatInstanceFlags.CLAN.code()) > 0) {
+            if ((getAccountInstance() & ChatInstanceFlag.CLAN.code()) > 0) {
                 accountTypeChar = 'c';
-            } else if ((getAccountInstance() & ChatInstanceFlags.LOBBY.code()) > 0) {
+            } else if ((getAccountInstance() & ChatInstanceFlag.LOBBY.code()) > 0) {
                 accountTypeChar = 'L';
             }
         }
 
         return accountTypeChar;
-    }
-
-    /**
-     * Represents various flags a chat {@link SteamID} may have, packed into its instance.
-     */
-    public enum ChatInstanceFlags {
-
-        /**
-         * This flag is set for Unknown chat.
-         */
-        UNKNOWN(Long.MIN_VALUE),
-
-        /**
-         * This flag is set for clan based chat {@link SteamID SteamIDs}.
-         */
-        CLAN((SteamID.ACCOUNT_INSTANCE_MASK + 1) >> 1),
-
-        /**
-         * This flag is set for lobby based chat {@link SteamID SteamIDs}.
-         */
-        LOBBY((SteamID.ACCOUNT_INSTANCE_MASK + 1) >> 2),
-
-        /**
-         * This flag is set for matchmaking lobby based chat {@link SteamID SteamIDs}.
-         */
-        MMS_LOBBY((SteamID.ACCOUNT_INSTANCE_MASK + 1) >> 3);
-
-        private final long code;
-
-        ChatInstanceFlags(long code) {
-            this.code = code;
-        }
-
-        public long code() {
-            return this.code;
-        }
-
-        public static ChatInstanceFlags from(long code) {
-            for (ChatInstanceFlags e : ChatInstanceFlags.values()) {
-                if (e.code == code) {
-                    return e;
-                }
-            }
-            return ChatInstanceFlags.UNKNOWN;
-        }
     }
 }
