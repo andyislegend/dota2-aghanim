@@ -1,5 +1,7 @@
 package com.avenga.steamclient.enums;
 
+import java.util.Arrays;
+
 /**
  * Represents various types of games.
  */
@@ -41,11 +43,8 @@ public enum GameType {
     }
 
     public static GameType from(int code) {
-        for (GameType e : GameType.values()) {
-            if (e.code == code) {
-                return e;
-            }
-        }
-        return GameType.UNKNOWN;
+        return Arrays.stream(GameType.values())
+                .filter(gameType -> gameType.code == code)
+                .findFirst().orElse(UNKNOWN);
     }
 }

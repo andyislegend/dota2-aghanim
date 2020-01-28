@@ -2,6 +2,8 @@ package com.avenga.steamclient.enums;
 
 import com.avenga.steamclient.model.SteamID;
 
+import java.util.Arrays;
+
 /**
  * Represents various flags a chat {@link SteamID} may have, packed into its instance.
  */
@@ -38,12 +40,9 @@ public enum ChatInstanceFlag {
     }
 
     public static ChatInstanceFlag from(long code) {
-        for (ChatInstanceFlag e : ChatInstanceFlag.values()) {
-            if (e.code == code) {
-                return e;
-            }
-        }
-        return ChatInstanceFlag.UNKNOWN;
+        return Arrays.stream(ChatInstanceFlag.values())
+                .filter(flag -> flag.code == code)
+                .findFirst().orElse(UNKNOWN);
     }
 
 }
