@@ -15,7 +15,6 @@ public class ServerListClientPacketHandler implements ClientPacketHandler {
 
     @Override
     public void handle(PacketMessage packetMessage, CMClient cmClient) {
-
         ClientMessageProtobuf<CMsgClientServerList.Builder> listMsg = new ClientMessageProtobuf<>(CMsgClientServerList.class, packetMessage);
 
         for (CMsgClientServerList.Server server : listMsg.getBody().getServersList()) {

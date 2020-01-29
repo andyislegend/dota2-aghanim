@@ -11,7 +11,11 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
+
+import static com.avenga.steamclient.steam.CMClient.getPacketMsg;
 
 public class MultiClientPacketHandler implements ClientPacketHandler {
 
@@ -48,17 +52,24 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
             }
         }
 
+        List<PacketMessage> packetMessages = new ArrayList<>();
         try (BinaryReader binaryReader = new BinaryReader(new ByteArrayInputStream(payload))) {
             while (binaryReader.available() > 0) {
                 int subSize = binaryReader.readInt();
                 byte[] subData = binaryReader.readBytes(subSize);
 
-                if (!cmClient.onClientMsgReceived(CMClient.getPacketMsg(subData))) {
-                    break;
-                }
+                PacketMessage subPacketMessage = getPacketMsg(subData);
+                packetMessages.add(subPacketMessage);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        for (PacketMessage message : packetMessages) {
+            LOGGER.debug(String.format("<- Part of Multi - EMsg: %s (%d) (Proto: %s)", message.getMessageType(), message.getMessageType().code(), message.isProto()));
+            if (!cmClient.onClientMsgReceived(message)) {
+                break;
+            }
         }
     }
 }

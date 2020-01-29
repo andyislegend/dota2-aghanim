@@ -46,7 +46,7 @@ public class EnvelopeEncryptedConnection extends Connection {
         }
     };
 
-    private final EventHandler<NetMsgEventArgs> onNetMsgReceived = new EventHandler<NetMsgEventArgs>() {
+    private final EventHandler<NetMsgEventArgs> onNetMsgReceived = new EventHandler<>() {
         @Override
         public void handleEvent(Object sender, NetMsgEventArgs e) {
             if (state == EncryptionState.ENCRYPTED) {

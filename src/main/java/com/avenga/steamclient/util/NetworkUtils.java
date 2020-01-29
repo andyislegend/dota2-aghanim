@@ -18,4 +18,9 @@ public class NetworkUtils {
             return null;
         }
     }
+
+    public static int getIPAddress(InetAddress ip) {
+        final ByteBuffer buff = ByteBuffer.wrap(ip.getAddress());
+        return (int) (buff.getInt() & 0xFFFFFFFFL);
+    }
 }

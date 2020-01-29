@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -76,7 +77,8 @@ public class CMClient {
                 ClientLoggedOff, new LoggedOffClientPacketHandler(),
                 ClientServerList, new ServerListClientPacketHandler(),
                 ClientCMList, new CMListClientPacketHandler(),
-                ClientSessionToken, new SessionTokenClientPacketHandler()
+                ClientSessionToken, new SessionTokenClientPacketHandler(),
+                ClientNewLoginKey, new UserNewLoginKeyClientPacketHandler()
         );
     }
 
@@ -165,6 +167,7 @@ public class CMClient {
         }
 
         LOGGER.debug(String.format("Sent -> EMsg: %s (Proto: %s)", message.getMsgType(), message.isProto()));
+        LOGGER.debug(String.format("Sent -> Connection host: %s, port %d", connection.getCurrentEndPoint().getHostString(), connection.getCurrentEndPoint().getPort()));
 
         // we'll swallow any network failures here because they will be thrown later
         // on the network thread, and that will lead to a disconnect callback
@@ -226,6 +229,15 @@ public class CMClient {
      */
     public EUniverse getUniverse() {
         return configuration.getUniverse();
+    }
+
+    /**
+     * Returns the the local IP of this client.
+     *
+     * @return The local IP.
+     */
+    public InetAddress getLocalIP() {
+        return connection.getLocalIP();
     }
 
     /**
