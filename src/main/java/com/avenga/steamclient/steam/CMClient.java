@@ -167,7 +167,6 @@ public class CMClient {
         }
 
         LOGGER.debug(String.format("Sent -> EMsg: %s (Proto: %s)", message.getMsgType(), message.isProto()));
-        LOGGER.debug(String.format("Sent -> Connection host: %s, port %d", connection.getCurrentEndPoint().getHostString(), connection.getCurrentEndPoint().getPort()));
 
         // we'll swallow any network failures here because they will be thrown later
         // on the network thread, and that will lead to a disconnect callback

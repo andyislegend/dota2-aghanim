@@ -65,8 +65,12 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
             e.printStackTrace();
         }
 
+        if (LOGGER.isDebugEnabled()) {
+            packetMessages.forEach(message -> LOGGER.debug(String.format("<- Part of Multi - EMsg: %s (%d) (Proto: %s)",
+                    message.getMessageType(), message.getMessageType().code(), message.isProto())));
+        }
+
         for (PacketMessage message : packetMessages) {
-            LOGGER.debug(String.format("<- Part of Multi - EMsg: %s (%d) (Proto: %s)", message.getMessageType(), message.getMessageType().code(), message.isProto()));
             if (!cmClient.onClientMsgReceived(message)) {
                 break;
             }
