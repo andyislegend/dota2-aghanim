@@ -12,6 +12,7 @@ import com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg;
 import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
 import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
+import com.avenga.steamclient.steam.coordinator.GameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.GCSessionCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.callback.MatchDetailsCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.callback.ProfileCardCallbackHandler;
@@ -61,22 +62,24 @@ public class SteamLogOn {
 
         GamePlayedClientCallbackHandler.handle(gamePlayedCallback);
 
-        var gcSessionCallback = steamClient.addGCCallbackToQueue(EGCBaseClientMsg.k_EMsgGCClientWelcome.getNumber());
+        var gameCoordinator = new GameCoordinator(steamClient);
+
+        var gcSessionCallback = gameCoordinator.addCallback(EGCBaseClientMsg.k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
-        steamClient.sendToGC(clientHelloMessage, DOTA_2_APP_ID, k_EMsgGCClientHello.getNumber());
+        gameCoordinator.send(clientHelloMessage, DOTA_2_APP_ID, k_EMsgGCClientHello.getNumber());
         var gcSession = GCSessionCallbackHandler.handle(gcSessionCallback).getBody().build();
 
-        var matchDetailsCallback = steamClient.addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber());
+        var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
         var matchRequestMessage = new ClientGCProtobufMessage<CMsgGCMatchDetailsRequest.Builder>(CMsgGCMatchDetailsRequest.class, EDOTAGCMsg.k_EMsgGCMatchDetailsRequest.getNumber());
         matchRequestMessage.getBody().setMatchId(5194418928L);
-        steamClient.sendToGC(matchRequestMessage, DOTA_2_APP_ID, EDOTAGCMsg.k_EMsgGCMatchDetailsRequest.getNumber());
+        gameCoordinator.send(matchRequestMessage, DOTA_2_APP_ID, EDOTAGCMsg.k_EMsgGCMatchDetailsRequest.getNumber());
         var matchDetails = MatchDetailsCallbackHandler.handle(matchDetailsCallback).getBody().build();
 
-        var profileCardCallback = steamClient.addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber());
+        var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
         var profileCardMessage = new ClientGCProtobufMessage<CMsgClientToGCGetProfileCard.Builder>(CMsgClientToGCGetProfileCard.class, k_EMsgClientToGCGetProfileCard.getNumber());
         profileCardMessage.getBody().setAccountId(124801257);
-        steamClient.sendToGC(profileCardMessage, DOTA_2_APP_ID, k_EMsgClientToGCGetProfileCard.getNumber());
+        gameCoordinator.send(profileCardMessage, DOTA_2_APP_ID, k_EMsgClientToGCGetProfileCard.getNumber());
         var profileCard = ProfileCardCallbackHandler.handle(profileCardCallback).getBody().build();
 
         steamUser.logOff();
