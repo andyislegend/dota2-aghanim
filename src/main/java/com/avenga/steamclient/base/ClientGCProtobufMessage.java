@@ -15,13 +15,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder<BodyType>> extends HeaderClientGCProtobufMessage {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientGCProtobufMessage.class);
-
     private static final int PAYLOAD_RESERVE = 64;
-
     private BodyType body;
-
     private final Class<? extends AbstractMessage> clazz;
 
     /**
@@ -81,7 +77,7 @@ public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder
      * @param msg   The message that this instance is a reply for.
      */
     public ClientGCProtobufMessage(Class<? extends AbstractMessage> clazz, int eMsg, GCBaseMessage<MsgGCHdrProtoBuf> msg) {
-        this(clazz, eMsg, msg, 64);
+        this(clazz, eMsg, msg, PAYLOAD_RESERVE);
     }
 
     /**
@@ -106,16 +102,16 @@ public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder
 
     @Override
     public byte[] serialize() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        try {
+        byte[] result = null;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             getHeader().serialize(baos);
             body.build().writeTo(baos);
             baos.write(payload.toByteArray());
-        } catch (IOException ignored) {
+            result = baos.toByteArray();
+        } catch (IOException ex) {
+            LOGGER.debug(ex.getMessage(), ex);
         }
-
-        return baos.toByteArray();
+        return result;
     }
 
     @Override
@@ -123,17 +119,15 @@ public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder
         if (data == null) {
             throw new IllegalArgumentException("data is null");
         }
-        BinaryReader ms = new BinaryReader(new ByteArrayInputStream(data));
-
-        try {
+        try (BinaryReader ms = new BinaryReader(new ByteArrayInputStream(data))) {
             getHeader().deserialize(ms);
             final Method m = clazz.getMethod("newBuilder");
             body = (BodyType) m.invoke(null);
             body.mergeFrom(ms);
             payload.write(data, ms.getPosition(), ms.available());
             payload.seek(0, SeekOrigin.BEGIN);
-        } catch (IOException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            LOGGER.debug(e.getMessage(), e);
+        } catch (Exception ex) {
+            LOGGER.debug(ex.getMessage(), ex);
         }
     }
 

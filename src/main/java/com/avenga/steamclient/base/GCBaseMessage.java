@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
  * @param <HdrType> The header type for this gc message.
  */
 public abstract class GCBaseMessage<HdrType extends SteamSerializable> extends AbstractMessage implements ClientGCMessage {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(GCBaseMessage.class);
-
     private HdrType header;
 
     /**

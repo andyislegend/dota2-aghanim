@@ -2,6 +2,8 @@ package com.avenga.steamclient.base;
 
 import com.avenga.steamclient.generated.MsgGCHdrProtoBuf;
 import com.avenga.steamclient.model.JobID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -10,12 +12,10 @@ import java.io.IOException;
  * Represents a protobuf backed packet message.
  */
 public class GCPacketClientMessageProtobuf implements GCPacketMessage {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GCPacketClientMessageProtobuf.class);
     private int msgType;
-
     private JobID targetJobID;
-
     private JobID sourceJobID;
-
     private byte[] payload;
 
     /**
@@ -37,7 +37,8 @@ public class GCPacketClientMessageProtobuf implements GCPacketMessage {
         // we need to pull out the job ids, so we deserialize the protobuf header
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
             protobufHeader.deserialize(bais);
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
+            LOGGER.debug(ex.getMessage(), ex);
         }
 
         targetJobID = new JobID(protobufHeader.getProto().getJobidTarget());
