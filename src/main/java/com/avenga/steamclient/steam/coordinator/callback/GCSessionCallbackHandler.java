@@ -11,10 +11,10 @@ import java.util.concurrent.ExecutionException;
 import static com.avenga.steamclient.constant.Constant.CALLBACK_EXCEPTION_MESSAGE_FORMAT;
 
 public class GCSessionCallbackHandler {
-    public static ClientGCProtobufMessage<CMsgClientWelcome.Builder> handle(SteamMessageCallback<GCPacketMessage> steamMessageCallback) {
+    public static ClientGCProtobufMessage<CMsgClientWelcome.Builder> handle(SteamMessageCallback<GCPacketMessage> callback) {
         GCPacketMessage gcPacketMessage;
         try {
-            gcPacketMessage = steamMessageCallback.getCallback().get();
+            gcPacketMessage = callback.getCallback().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, "GCSession", e.getMessage()), e);
         }

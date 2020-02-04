@@ -5,11 +5,11 @@ import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CM
 import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
 import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
-import com.avenga.steamclient.steam.coordinator.GameCoordinator;
+import com.avenga.steamclient.steam.coordinator.impl.GameCoordinator;
 import com.avenga.steamclient.steam.steamuser.LogOnDetails;
 import com.avenga.steamclient.steam.steamuser.SteamUser;
 import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
-import com.avenga.steamclient.steam.wrapper.DotaClient;
+import com.avenga.steamclient.steam.dota.impl.DotaClient;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -40,18 +40,7 @@ public class SteamLogOn {
         var response = UserLogOnCallbackHandler.handle(userLogOnCallback);
         System.out.println("Result of response: " + response.getResult().name());
 
-        var gamePlayedCallback = steamClient.addCallbackToQueue(ClientServiceCall.code());
-        var gamePlayedRequest = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
-        var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
-                .setGameId(570)
-                .build();
-        gamePlayedRequest.getBody().addGamesPlayed(gamePlayed);
-        steamClient.send(gamePlayedRequest);
-
-        GamePlayedClientCallbackHandler.handle(gamePlayedCallback);
-
         var dotaClient = new DotaClient(new GameCoordinator(steamClient));
-        var session = dotaClient.initSession();
         var matchDetails = dotaClient.getMatchDetails(5194418928L);
         var profileCard = dotaClient.getAccountProfileCard(124801257);
         steamUser.logOff();
