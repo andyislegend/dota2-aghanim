@@ -22,11 +22,11 @@ public abstract class AbstractDotaClient {
 
     public AbstractDotaClient(AbstractGameCoordinator gameCoordinator) {
         this.gameCoordinator = gameCoordinator;
-        prepareSteamClient();
-        initSession();
+        setClientPlayedGame();
+        initGCSession();
     }
 
-    protected void prepareSteamClient() {
+    protected void setClientPlayedGame() {
         var client = gameCoordinator.getClient();
         var gamePlayedCallback = client.addCallbackToQueue(ClientServiceCall.code());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
@@ -38,7 +38,7 @@ public abstract class AbstractDotaClient {
         GamePlayedClientCallbackHandler.handle(gamePlayedCallback);
     }
 
-    protected void initSession() {
+    protected void initGCSession() {
         var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
