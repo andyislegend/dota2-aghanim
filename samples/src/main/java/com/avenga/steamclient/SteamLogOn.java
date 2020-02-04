@@ -1,21 +1,15 @@
 package com.avenga.steamclient;
 
-import com.avenga.steamclient.base.ClientMessageProtobuf;
-import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CMsgClientGamesPlayed;
 import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
-import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.impl.GameCoordinator;
+import com.avenga.steamclient.steam.dota.impl.DotaClient;
 import com.avenga.steamclient.steam.steamuser.LogOnDetails;
 import com.avenga.steamclient.steam.steamuser.SteamUser;
 import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
-import com.avenga.steamclient.steam.dota.impl.DotaClient;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import static com.avenga.steamclient.enums.EMsg.ClientGamesPlayed;
-import static com.avenga.steamclient.enums.EMsg.ClientServiceCall;
 
 public class SteamLogOn {
 
