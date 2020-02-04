@@ -18,7 +18,7 @@ public class UserLogOnCallbackHandler {
 
     public static final int CALLBACK_MESSAGE_CODE = EMsg.ClientLogOnResponse.code();
 
-    public static UserLogOnResponse handle(SteamMessageCallback steamMessageCallback) {
+    public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> steamMessageCallback) {
         PacketMessage steamPacketMessage;
         try {
             steamPacketMessage = steamMessageCallback.getCallback().get();

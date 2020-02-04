@@ -1,14 +1,13 @@
 package com.avenga.steamclient.model.steam;
 
-import com.avenga.steamclient.base.PacketMessage;
 import lombok.Getter;
 
 import java.util.concurrent.CompletableFuture;
 
 @Getter
-public class SteamMessageCallback {
+public class SteamMessageCallback<T> {
     private int messageCode;
-    private CompletableFuture<PacketMessage> callback;
+    private CompletableFuture<T> callback;
 
     public SteamMessageCallback(int messageCode) {
         this.messageCode = messageCode;

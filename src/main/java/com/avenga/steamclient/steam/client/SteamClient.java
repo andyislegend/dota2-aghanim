@@ -2,21 +2,28 @@ package com.avenga.steamclient.steam.client;
 
 import com.avenga.steamclient.base.PacketMessage;
 import com.avenga.steamclient.constant.Constant;
+import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.exception.CallbackQueueException;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.steam.CMClient;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 
 public class SteamClient extends CMClient {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SteamClient.class);
+    private final BlockingQueue<SteamMessageCallback<PacketMessage>> callbacksQueue = new LinkedBlockingQueue<>();
+    @Setter
+    private Consumer<PacketMessage> onGcCallback = (packetMessage -> {
+        LOGGER.debug("Skipping callback from GC: " + packetMessage.getMessageType().code());
+    });
 
-    private BlockingQueue<SteamMessageCallback> callbacksQueue = new LinkedBlockingQueue<>();
     /**
      * Initializes a new instance of the {@link SteamClient} class with the default configuration.
      */
@@ -33,8 +40,8 @@ public class SteamClient extends CMClient {
         super(configuration);
     }
 
-    public SteamMessageCallback addCallbackToQueue(int messageCode) {
-        var steamMessageCallback = new SteamMessageCallback(messageCode);
+    public SteamMessageCallback<PacketMessage> addCallbackToQueue(int messageCode) {
+        var steamMessageCallback = new SteamMessageCallback<PacketMessage>(messageCode);
 
         if (!callbacksQueue.offer(steamMessageCallback)) {
             throw new CallbackQueueException("Callback for handling message with code '" + messageCode + "' wasn't added to queue");
@@ -46,11 +53,14 @@ public class SteamClient extends CMClient {
     @Override
     public boolean onClientMsgReceived(PacketMessage packetMessage) {
         if (!super.onClientMsgReceived(packetMessage)) {
-           return false;
+            return false;
         }
 
-        findAndCompleteCallback(packetMessage.getMessageType().code(), packetMessage);
-
+        if (packetMessage.getMessageType() == EMsg.ClientFromGC) {
+            onGcCallback.accept(packetMessage);
+        } else {
+            findAndCompleteCallback(packetMessage.getMessageType().code(), packetMessage);
+        }
         return true;
     }
 
@@ -67,7 +77,7 @@ public class SteamClient extends CMClient {
     }
 
     private void findAndCompleteCallback(int messageCode, PacketMessage packetMessage) {
-        Optional<SteamMessageCallback> messageCallback = callbacksQueue.stream()
+        Optional<SteamMessageCallback<PacketMessage>> messageCallback = callbacksQueue.stream()
                 .filter(callback -> callback.getMessageCode() == messageCode)
                 .findFirst();
 
