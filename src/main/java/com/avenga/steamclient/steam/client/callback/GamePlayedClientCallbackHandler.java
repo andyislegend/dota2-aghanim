@@ -10,9 +10,9 @@ import static com.avenga.steamclient.constant.Constant.CALLBACK_EXCEPTION_MESSAG
 
 public class GamePlayedClientCallbackHandler {
 
-    public static void handle(SteamMessageCallback<PacketMessage> steamMessageCallback) {
+    public static void handle(SteamMessageCallback<PacketMessage> callback) {
         try {
-            steamMessageCallback.getCallback().get();
+            callback.getCallback().get();
         } catch (final InterruptedException | ExecutionException e) {
             throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, "GamePlayed", e.getMessage()) , e);
         }

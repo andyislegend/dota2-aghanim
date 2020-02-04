@@ -11,8 +11,8 @@ import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHand
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.GCSessionCallbackHandler;
 
+import static com.avenga.steamclient.enums.EMsg.ClientGameConnectTokens;
 import static com.avenga.steamclient.enums.EMsg.ClientGamesPlayed;
-import static com.avenga.steamclient.enums.EMsg.ClientServiceCall;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientHello;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientWelcome;
 
@@ -28,7 +28,7 @@ public abstract class AbstractDotaClient {
 
     protected void setClientPlayedGame() {
         var client = gameCoordinator.getClient();
-        var gamePlayedCallback = client.addCallbackToQueue(ClientServiceCall.code());
+        var gamePlayedCallback = client.addCallbackToQueue(ClientGameConnectTokens.code());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
         var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
                 .setGameId(DOTA_2_APP_ID)
