@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 public class SteamClient extends CMClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessage.class);
-    private final BlockingQueue<SteamMessageCallback<PacketMessage>> clientCallbacksQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<SteamMessageCallback<PacketMessage>> callbacksQueue = new LinkedBlockingQueue<>();
     @Setter
     private Consumer<PacketMessage> onGcCallback = (packetMessage -> {
         LOGGER.debug("Skipping callback from GC: " + packetMessage.getMessageType().code());
@@ -44,7 +44,7 @@ public class SteamClient extends CMClient {
     public SteamMessageCallback<PacketMessage> addCallbackToQueue(int messageCode) {
         var steamMessageCallback = new SteamMessageCallback<PacketMessage>(messageCode);
 
-        if (!clientCallbacksQueue.offer(steamMessageCallback)) {
+        if (!callbacksQueue.offer(steamMessageCallback)) {
             throw new CallbackQueueException("Callback for handling message with code '" + messageCode + "' wasn't added to queue");
         }
 
@@ -78,12 +78,12 @@ public class SteamClient extends CMClient {
     }
 
     private void findAndCompleteCallback(int messageCode, PacketMessage packetMessage) {
-        Optional<SteamMessageCallback<PacketMessage>> messageCallback = clientCallbacksQueue.stream()
+        Optional<SteamMessageCallback<PacketMessage>> messageCallback = callbacksQueue.stream()
                 .filter(callback -> callback.getMessageCode() == messageCode)
                 .findFirst();
 
         messageCallback.ifPresent(callback -> {
-            clientCallbacksQueue.remove(callback);
+            callbacksQueue.remove(callback);
             callback.getCallback().complete(packetMessage);
         });
     }
