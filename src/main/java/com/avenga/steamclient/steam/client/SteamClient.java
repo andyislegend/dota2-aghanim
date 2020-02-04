@@ -1,6 +1,5 @@
 package com.avenga.steamclient.steam.client;
 
-import com.avenga.steamclient.base.BaseMessage;
 import com.avenga.steamclient.base.PacketMessage;
 import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EMsg;
@@ -18,7 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 public class SteamClient extends CMClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessage.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SteamClient.class);
     private final BlockingQueue<SteamMessageCallback<PacketMessage>> callbacksQueue = new LinkedBlockingQueue<>();
     @Setter
     private Consumer<PacketMessage> onGcCallback = (packetMessage -> {

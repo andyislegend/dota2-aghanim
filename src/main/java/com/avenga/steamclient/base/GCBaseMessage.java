@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class GCBaseMessage<HdrType extends SteamSerializable> extends AbstractMessage implements ClientGCMessage {
     private static final Logger LOGGER = LoggerFactory.getLogger(GCBaseMessage.class);
+    private static final int DEFAULT_PAYLOAD_RESERVE = 0;
     private HdrType header;
 
     /**
@@ -19,7 +20,7 @@ public abstract class GCBaseMessage<HdrType extends SteamSerializable> extends A
      * @param clazz the type of the header
      */
     public GCBaseMessage(Class<HdrType> clazz) {
-        this(clazz, 0);
+        this(clazz, DEFAULT_PAYLOAD_RESERVE);
     }
 
     /**
