@@ -14,8 +14,18 @@ import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesId.EDOTAGCMsg.
 
 public class DotaClient extends AbstractDotaClient {
 
+    private static final int DEFAULT_APPLICATION_ID = 570;
+
+    private int applicationId;
+
     public DotaClient(AbstractGameCoordinator gameCoordinator) {
         super(gameCoordinator);
+        this.applicationId = DEFAULT_APPLICATION_ID;
+    }
+
+    public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) {
+        super(gameCoordinator);
+        this.applicationId = applicationId;
     }
 
     @Override
@@ -23,7 +33,7 @@ public class DotaClient extends AbstractDotaClient {
         var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
         var matchRequestMessage = new ClientGCProtobufMessage<CMsgGCMatchDetailsRequest.Builder>(CMsgGCMatchDetailsRequest.class, k_EMsgGCMatchDetailsRequest.getNumber());
         matchRequestMessage.getBody().setMatchId(matchId);
-        gameCoordinator.send(matchRequestMessage, DOTA_2_APP_ID, k_EMsgGCMatchDetailsRequest.getNumber());
+        gameCoordinator.send(matchRequestMessage, applicationId, k_EMsgGCMatchDetailsRequest.getNumber());
         return MatchDetailsCallbackHandler.handle(matchDetailsCallback).getBody().build();
     }
 
@@ -32,7 +42,12 @@ public class DotaClient extends AbstractDotaClient {
         var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
         var profileCardMessage = new ClientGCProtobufMessage<CMsgClientToGCGetProfileCard.Builder>(CMsgClientToGCGetProfileCard.class, k_EMsgClientToGCGetProfileCard.getNumber());
         profileCardMessage.getBody().setAccountId(accountId);
-        gameCoordinator.send(profileCardMessage, DOTA_2_APP_ID, k_EMsgClientToGCGetProfileCard.getNumber());
+        gameCoordinator.send(profileCardMessage, applicationId, k_EMsgClientToGCGetProfileCard.getNumber());
         return ProfileCardCallbackHandler.handle(profileCardCallback).getBody().build();
+    }
+
+    @Override
+    public int getApplicationId() {
+        return applicationId;
     }
 }

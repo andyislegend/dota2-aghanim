@@ -18,7 +18,7 @@
         <protobuf-java.version>3.11.1</protobuf-java.version>
         <steam-language-gen.version>1.0.0</steam-language-gen.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <slf4j-api.version>1.8.0-beta4</slf4j-api.version>
+        <slf4j-api.version>1.7.30</slf4j-api.version>
         <bcprov-jdk15on.version>1.64</bcprov-jdk15on.version>
         <Java-WebSocket.version>1.4.0</Java-WebSocket.version>
         <jackson.version>2.10.1</jackson.version>

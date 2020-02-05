@@ -1,6 +1,5 @@
 package com.avenga.steamclient.steam.webapi;
 
-import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.discovery.ServerRecord;
@@ -82,7 +81,7 @@ public class SteamDirectoryService {
             parameters.put("key", configuration.getWebAPIKey());
         }
 
-        URL baseUrl = new URL(Constant.WEB_API_BASE_ADDRESS);
+        URL baseUrl = new URL(configuration.getWebAPIBaseAddress());
         URL steamDirectoryUrl = new URL(baseUrl, CM_LIST_URL_PATH);
 
         return HTTP_CLIENT.get(steamDirectoryUrl)

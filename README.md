@@ -36,12 +36,13 @@ compile group: 'com.avenga', name: 'steam-client', version: '1.0.0'
 ```
 
 ## Build
-To build library you will need to install `steam-language-gen` plugin to local m2 repository. 
-From `steam-language-gen` folder execute:
+Library use `steam-language-gen` plugin to generate Java classes from `.steamd` files. In case you don't have installed plugin
+in the local m2 repository, you will need to install it before launch build of the library. 
+To build and install plugin from `steam-language-gen` folder execute next command:
 ```
 mvn clean install 
 ```
-After plugin will be installed, you can build library by execution command from `root` folder of the project:
+If plugin was installed to local repository, you can build library by execution command from `root` folder of the project:
 ```
 mvn clean install 
 ```

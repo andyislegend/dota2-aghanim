@@ -19,7 +19,9 @@ import java.util.function.Consumer;
 
 public class SteamClient extends CMClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SteamClient.class);
+
     private final BlockingQueue<SteamMessageCallback<PacketMessage>> callbacksQueue = new LinkedBlockingQueue<>();
+
     @Setter
     private Consumer<PacketMessage> onGcCallback = (packetMessage -> {
         LOGGER.debug("Skipping callback from GC: " + packetMessage.getMessageType().code());

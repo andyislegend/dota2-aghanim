@@ -17,7 +17,7 @@ import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClient
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientWelcome;
 
 public abstract class AbstractDotaClient {
-    protected static final int DOTA_2_APP_ID = 570;
+
     protected final AbstractGameCoordinator gameCoordinator;
 
     public AbstractDotaClient(AbstractGameCoordinator gameCoordinator) {
@@ -31,7 +31,7 @@ public abstract class AbstractDotaClient {
         var gamePlayedCallback = client.addCallbackToQueue(ClientGameConnectTokens.code());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
         var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
-                .setGameId(DOTA_2_APP_ID)
+                .setGameId(getApplicationId())
                 .build();
         gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
         client.send(gamePlayedMessage);
@@ -42,9 +42,11 @@ public abstract class AbstractDotaClient {
         var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
-        gameCoordinator.send(clientHelloMessage, DOTA_2_APP_ID, k_EMsgGCClientHello.getNumber());
+        gameCoordinator.send(clientHelloMessage, getApplicationId(), k_EMsgGCClientHello.getNumber());
         GCSessionCallbackHandler.handle(gcSessionCallback).getBody().build();
     }
+
+    public abstract int getApplicationId();
 
     public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);
 
