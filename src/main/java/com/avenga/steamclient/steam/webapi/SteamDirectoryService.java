@@ -10,10 +10,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Helper class to load servers from the Steam Directory Web API.
@@ -45,9 +42,7 @@ public class SteamDirectoryService {
      * @throws IOException if the request could not be executed
      */
     public static List<ServerRecord> getServers(SteamConfiguration configuration, int maxServers) throws IOException {
-        if (configuration == null) {
-            throw new IllegalArgumentException("configuration null");
-        }
+        Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
         Map<String, String> parameters = new HashMap<>();
         parameters.put("cellid", String.valueOf(configuration.getCellID()));

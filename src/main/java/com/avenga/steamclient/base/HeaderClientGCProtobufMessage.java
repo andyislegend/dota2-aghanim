@@ -4,6 +4,8 @@ import com.avenga.steamclient.generated.MsgGCHdrProtoBuf;
 import com.avenga.steamclient.model.JobID;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesBase;
 
+import java.util.Objects;
+
 public abstract class HeaderClientGCProtobufMessage extends GCBaseMessage<MsgGCHdrProtoBuf> {
 
     public HeaderClientGCProtobufMessage(Class<MsgGCHdrProtoBuf> clazz, int payloadReserve) {
@@ -27,9 +29,8 @@ public abstract class HeaderClientGCProtobufMessage extends GCBaseMessage<MsgGCH
 
     @Override
     public void setTargetJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getProtoHeader().setJobidTarget(jobID.getValue());
     }
 
@@ -40,9 +41,8 @@ public abstract class HeaderClientGCProtobufMessage extends GCBaseMessage<MsgGCH
 
     @Override
     public void setSourceJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getProtoHeader().setJobidSource(jobID.getValue());
     }
 

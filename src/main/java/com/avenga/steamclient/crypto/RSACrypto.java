@@ -18,6 +18,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Handles encrypting and decrypting using the RSA public key encryption algorithm.
@@ -29,9 +30,7 @@ public class RSACrypto {
     private Cipher cipher;
 
     public RSACrypto(byte[] key) {
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
+        Objects.requireNonNull(key, "key byte array wasn't provided");
 
         try {
             final List<Byte> list = new ArrayList<>();

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Represents a protobuf backed client message. Only contains the header information.
@@ -82,9 +83,8 @@ public class HeaderClientMessageProtobuf extends BaseMessage<MsgHdrProtoBuf> {
 
     @Override
     public void setSteamID(SteamID steamID) {
-        if (steamID == null) {
-            throw new IllegalArgumentException("steamID is null");
-        }
+        Objects.requireNonNull(steamID, "steamID wasn't provided");
+
         getProtoHeader().setSteamid(steamID.convertToUInt64());
     }
 
@@ -95,9 +95,8 @@ public class HeaderClientMessageProtobuf extends BaseMessage<MsgHdrProtoBuf> {
 
     @Override
     public void setTargetJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getProtoHeader().setJobidTarget(jobID.getValue());
     }
 
@@ -108,9 +107,8 @@ public class HeaderClientMessageProtobuf extends BaseMessage<MsgHdrProtoBuf> {
 
     @Override
     public void setSourceJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getProtoHeader().setJobidSource(jobID.getValue());
     }
 

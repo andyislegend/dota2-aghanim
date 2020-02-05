@@ -26,9 +26,7 @@ public class SmartCMServerProvider {
     private Long badConnectionMemoryTimeSpan;
 
     public SmartCMServerProvider(SteamConfiguration configuration) {
-        if (configuration == null) {
-            throw new IllegalArgumentException("configuration is null");
-        }
+        Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
         this.configuration = configuration;
     }
@@ -81,9 +79,7 @@ public class SmartCMServerProvider {
      * @param endPoints The {@link ServerRecord ServerRecords} to use for this {@link SmartCMServerProvider}.
      */
     public void replaceList(List<ServerRecord> endPoints) {
-        if (endPoints == null) {
-            throw new IllegalArgumentException("endPoints is null");
-        }
+        Objects.requireNonNull(endPoints, "Server record endpoints wasn't provided");
 
         servers.clear();
         endPoints.forEach(this::addCore);

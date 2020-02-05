@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder<BodyType>> extends HeaderClientGCProtobufMessage {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientGCProtobufMessage.class);
@@ -86,18 +87,16 @@ public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder
      *
      * @param clazz          the type of the body
      * @param eMsg           The network message type this client message represents.
-     * @param msg            The message that this instance is a reply for.
+     * @param message            The message that this instance is a reply for.
      * @param payloadReserve The number of bytes to initialize the payload capacity to.
      */
-    public ClientGCProtobufMessage(Class<? extends AbstractMessage> clazz, int eMsg, GCBaseMessage<MsgGCHdrProtoBuf> msg, int payloadReserve) {
+    public ClientGCProtobufMessage(Class<? extends AbstractMessage> clazz, int eMsg, GCBaseMessage<MsgGCHdrProtoBuf> message, int payloadReserve) {
         this(clazz, eMsg, payloadReserve);
 
-        if (msg == null) {
-            throw new IllegalArgumentException("msg is null");
-        }
+        Objects.requireNonNull(message, "message wasn't provided");
 
         // our target is where the message came from
-        getHeader().getProto().setJobidTarget(msg.getHeader().getProto().getJobidSource());
+        getHeader().getProto().setJobidTarget(message.getHeader().getProto().getJobidSource());
     }
 
     @Override
@@ -116,9 +115,7 @@ public class ClientGCProtobufMessage<BodyType extends GeneratedMessageV3.Builder
 
     @Override
     public void deserialize(byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data is null");
-        }
+        Objects.requireNonNull(data, "data wasn't provided");
         try (BinaryReader ms = new BinaryReader(new ByteArrayInputStream(data))) {
             getHeader().deserialize(ms);
             final Method m = clazz.getMethod("newBuilder");

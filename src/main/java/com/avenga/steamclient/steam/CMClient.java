@@ -23,10 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.avenga.steamclient.enums.EMsg.*;
 
@@ -62,9 +59,7 @@ public class CMClient {
     private final Map<EMsg, ClientPacketHandler> packetHandlers;
 
     public CMClient(SteamConfiguration configuration) {
-        if (configuration == null) {
-            throw new IllegalArgumentException("Configuration should be provided for CM client");
-        }
+        Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
         this.configuration = configuration;
         this.serverMap = new HashMap<>();
@@ -156,9 +151,7 @@ public class CMClient {
      * @param message The client message to send.
      */
     public void send(ClientMessage message) {
-        if (message == null) {
-            throw new IllegalArgumentException("A value for 'message' must be supplied");
-        }
+        Objects.requireNonNull(message, "Client message wasn't provided");
 
         if (sessionID != null) {
             message.setSessionID(sessionID);

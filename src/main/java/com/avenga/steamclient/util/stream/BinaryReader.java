@@ -2,6 +2,7 @@ package com.avenga.steamclient.util.stream;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 public class BinaryReader extends FilterInputStream {
 
@@ -101,9 +102,7 @@ public class BinaryReader extends FilterInputStream {
     }
 
     public String readNullTermString(Charset charset) throws IOException {
-        if (charset == null) {
-            throw new IOException("charset is null");
-        }
+        Objects.requireNonNull(charset, "charset wasn't provided");
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream(0);
         BinaryWriter bw = new BinaryWriter(buffer);

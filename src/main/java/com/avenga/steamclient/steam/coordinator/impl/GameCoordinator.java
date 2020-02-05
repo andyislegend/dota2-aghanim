@@ -12,6 +12,8 @@ import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.util.MessageUtil;
 import com.google.protobuf.ByteString;
 
+import java.util.Objects;
+
 public class GameCoordinator extends AbstractGameCoordinator {
 
     public GameCoordinator(SteamClient client) {
@@ -19,15 +21,14 @@ public class GameCoordinator extends AbstractGameCoordinator {
     }
 
     @Override
-    public void send(ClientGCMessage msg, int appId, int eMsg) {
-        if (msg == null) {
-            throw new IllegalArgumentException("msg is null");
-        }
+    public void send(ClientGCMessage message, int appId, int eMsg) {
+        Objects.requireNonNull(message, "Client Game Coordinator message wasn't provided");
+
         var clientMsg = new ClientMessageProtobuf<CMsgGCClient.Builder>(CMsgGCClient.class, EMsg.ClientToGC);
         clientMsg.getProtoHeader().setRoutingAppid(appId);
-        clientMsg.getBody().setMsgtype(MessageUtil.makeGCMsg(eMsg, msg.isProto()));
+        clientMsg.getBody().setMsgtype(MessageUtil.makeGCMsg(eMsg, message.isProto()));
         clientMsg.getBody().setAppid(appId);
-        clientMsg.getBody().setPayload(ByteString.copyFrom(msg.serialize()));
+        clientMsg.getBody().setPayload(ByteString.copyFrom(message.serialize()));
         client.send(clientMsg);
     }
 

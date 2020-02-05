@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * Represents a protobuf backed client message.
@@ -141,9 +142,7 @@ public class ClientMessageProtobuf<BodyType extends GeneratedMessageV3.Builder<B
 
     @Override
     public void deserialize(byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data is null");
-        }
+        Objects.requireNonNull(data, "data wasn't provided");
         BinaryReader reader = new BinaryReader(new ByteArrayInputStream(data));
 
         try {

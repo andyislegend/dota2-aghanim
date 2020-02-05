@@ -15,6 +15,8 @@ import com.avenga.steamclient.util.NetworkUtils;
 import com.avenga.steamclient.util.StringUtils;
 import com.google.protobuf.ByteString;
 
+import java.util.Objects;
+
 public class SteamUser {
 
     private SteamClient client;
@@ -30,9 +32,7 @@ public class SteamUser {
      * @param details The details to use for logging on.
      */
     public UserLogOnResponse logOn(LogOnDetails details) {
-        if (details == null) {
-            throw new IllegalArgumentException("details is null");
-        }
+        Objects.requireNonNull(details, "LogOn details wasn't provided");
 
         if (StringUtils.isNullOrEmpty(details.getUsername()) || StringUtils.isNullOrEmpty(details.getPassword())
                 && StringUtils.isNullOrEmpty(details.getLoginKey())) {

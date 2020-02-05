@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Represents a packet message with extended header information.
@@ -25,9 +26,7 @@ public class GCPacketClientMessage implements GCPacketMessage {
      * @param data The data.
      */
     public GCPacketClientMessage(int eMsg, byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data is null");
-        }
+        Objects.requireNonNull(data, "data wasn't provided");
 
         msgType = eMsg;
         payload = data;

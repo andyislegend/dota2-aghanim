@@ -1,24 +1,24 @@
 package com.avenga.steamclient.network;
 
-import com.avenga.steamclient.base.PacketMessage;
 import com.avenga.steamclient.base.Message;
+import com.avenga.steamclient.base.PacketMessage;
+import com.avenga.steamclient.crypto.CryptoHelper;
+import com.avenga.steamclient.crypto.KeyDictionary;
+import com.avenga.steamclient.crypto.RSACrypto;
 import com.avenga.steamclient.enums.*;
+import com.avenga.steamclient.event.EventArgs;
+import com.avenga.steamclient.event.EventHandler;
 import com.avenga.steamclient.generated.MsgChannelEncryptRequest;
 import com.avenga.steamclient.generated.MsgChannelEncryptResponse;
 import com.avenga.steamclient.generated.MsgChannelEncryptResult;
 import com.avenga.steamclient.steam.CMClient;
-import com.avenga.steamclient.crypto.KeyDictionary;
-import com.avenga.steamclient.crypto.CryptoHelper;
-import com.avenga.steamclient.crypto.RSACrypto;
-import com.avenga.steamclient.event.EventArgs;
-import com.avenga.steamclient.event.EventHandler;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 public class EnvelopeEncryptedConnection extends Connection {
 
@@ -74,9 +74,8 @@ public class EnvelopeEncryptedConnection extends Connection {
     };
 
     public EnvelopeEncryptedConnection(Connection inner, EUniverse universe) {
-        if (inner == null) {
-            throw new IllegalArgumentException("inner connection is null");
-        }
+        Objects.requireNonNull(inner, "inner connection wasn't provided");
+
         this.inner = inner;
         this.universe = universe;
 
