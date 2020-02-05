@@ -7,6 +7,7 @@ import com.avenga.steamclient.exception.CallbackQueueException;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.steam.CMClient;
+import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,13 @@ public class SteamClient extends CMClient {
         }
 
         return steamMessageCallback;
+    }
+
+    @Override
+    public void connect() {
+        var callback = addCallbackToQueue(ConnectedClientCallbackHandler.CALLBACK_MESSAGE_CODE);
+        super.connect();
+        ConnectedClientCallbackHandler.handle(callback);
     }
 
     @Override

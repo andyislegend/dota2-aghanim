@@ -105,7 +105,6 @@ public class EnvelopeEncryptedConnection extends Connection {
         if (request.getPayload().getLength() >= 16) {
             randomChallenge = request.getPayload().toByteArray();
         }
-        LOGGER.debug("Request data: " + Hex.toHexString(randomChallenge));
 
         byte[] publicKey = KeyDictionary.getPublicKey(connectedUniverse);
 

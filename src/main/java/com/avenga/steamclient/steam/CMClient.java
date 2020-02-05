@@ -140,9 +140,11 @@ public class CMClient {
         LOGGER.debug(String.format("<- Recv'd EMsg: %s (%d) (Proto: %s)", packetMessage.getMessageType(),
                 packetMessage.getMessageType().code(), packetMessage.isProto()));
 
-        this.packetHandlers.getOrDefault(packetMessage.getMessageType(), ((packet, cmClient) ->
-                LOGGER.debug("Unhandled packet message type: " + packet.getMessageType())))
-                .handle(packetMessage, this);
+        var handler = this.packetHandlers.get(packetMessage.getMessageType());
+
+        if (handler != null) {
+            handler.handle(packetMessage, this);
+        }
 
         return true;
     }

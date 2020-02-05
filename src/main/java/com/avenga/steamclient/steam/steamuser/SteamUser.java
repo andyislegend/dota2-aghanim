@@ -6,10 +6,10 @@ import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.generated.MsgClientLogon;
 import com.avenga.steamclient.model.SteamID;
-import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogOff;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogon;
 import com.avenga.steamclient.steam.client.SteamClient;
+import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
 import com.avenga.steamclient.util.HardwareUtils;
 import com.avenga.steamclient.util.NetworkUtils;
 import com.avenga.steamclient.util.StringUtils;
@@ -29,7 +29,7 @@ public class SteamUser {
      *
      * @param details The details to use for logging on.
      */
-    public void logOn(LogOnDetails details) {
+    public UserLogOnResponse logOn(LogOnDetails details) {
         if (details == null) {
             throw new IllegalArgumentException("details is null");
         }
@@ -96,7 +96,9 @@ public class SteamUser {
         }
         logon.getBody().setEresultSentryfile(details.getSentryFileHash() != null ? EResult.OK.code() : EResult.FileNotFound.code());
 
+        var userLogOnCallback = client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
         client.send(logon);
+        return UserLogOnCallbackHandler.handle(userLogOnCallback);
     }
 
     /**
