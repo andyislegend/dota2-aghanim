@@ -7,17 +7,66 @@ It aims to provide interface to perform various actions on the network and fetch
 **DOTA2 -Aghanim** is written in java 11 and can be used with any jdk11 and higher.
 
 ## Dependencies
-The only dependencies that will be added to your project is:
+Next base dependencies should be provided in your project:
 ```xml
+        <!--(1)-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
-            <scope>provided</scope>
+        </dependency>
+        <!--(2)-->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+        <!--(3)-->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf-java.version}</version>
+        </dependency>
+        <!--(4)-->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>${Java-WebSocket.version}</version>
+        </dependency>
+        <!--(5)-->
+        <dependency>
+            <groupId>com.github.corese4rch</groupId>
+            <artifactId>cvurl-io</artifactId>
+            <version>${cvurl-io.version}</version>
+        </dependency>
+        <!--(6)-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <!--(7)-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 ```
-There is a high chance you will use some logging library so [Slf4j](https://github.com/qos-ch/slf4j) 
-shouldn't be an unexpected resident in your build file.
+Depends on platform add the appropriate cryptography dependency to your project:
+```xml
+        <!-- NON-ANDROID ONLY -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${bcprov-jdk15on.version}</version>
+        </dependency>
+        <!-- ANDROID ONLY -->
+        <dependency>
+            <groupId>com.madgag.spongycastle</groupId>
+            <artifactId>prov</artifactId>
+            <version>${prov.version}</version>
+        </dependency>
+```
 
 ## How to get DOTA2 -Aghanim 
  **Maven**
@@ -36,13 +85,11 @@ compile group: 'com.avenga', name: 'steam-client', version: '1.0.0'
 ```
 
 ## Build
-Library use `steam-language-gen` plugin to generate Java classes from `.steamd` files. In case you don't have installed plugin
-in the local m2 repository, you will need to install it before launch build of the library. 
-To build and install plugin from `steam-language-gen` folder execute next command:
+To build library execute next command from `root` folder of the project:
 ```
 mvn clean install 
 ```
-If plugin was installed to local repository, you can build library by execution command from `root` folder of the project:
-```
-mvn clean install 
-```
+Please note, `mvn clean compile` command from `root` of the project won't work. 
+Library use internal `steam-language-gen` plugin to build Java classes from `.steamd` files. To execute plugin Maven 
+Reactor require `plugin.xml` descriptor to be present in `steam-language-gen/target/META-INF/../plugin.xml` folder, 
+which will be created after `steam-language-gen` compile phase.  
