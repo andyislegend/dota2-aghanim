@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Setter
@@ -44,9 +45,7 @@ public class KeyValue {
      * @return the child {@link KeyValue}
      */
     public KeyValue get(String key) {
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
+        Objects.requireNonNull(key, "key wasn't provided");
 
         return children.stream().filter(child -> key.equalsIgnoreCase(child.name)).findFirst().orElse(INVALID);
     }
@@ -67,9 +66,7 @@ public class KeyValue {
     }
 
     public boolean readAsText(InputStream is) throws IOException {
-        if (is == null) {
-            throw new IllegalArgumentException("input stream is null");
-        }
+        Objects.requireNonNull(is, "text input stream wasn't provided");
 
         children = new ArrayList<>();
 

@@ -233,9 +233,7 @@ public class KVTextReader extends PushbackInputStream {
 
             String value = this.readToken(wasQuoted, wasConditional);
 
-            if (value == null) {
-                throw new IllegalStateException("RecursiveLoadFromBuffer:  got NULL key");
-            }
+            Objects.requireNonNull(value, "RecursiveLoadFromBuffer: value wasn't provided");
 
             if (value.startsWith("}") && !wasQuoted.getValue()) {
                 throw new IllegalStateException("RecursiveLoadFromBuffer:  got } in key");

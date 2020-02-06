@@ -1,6 +1,5 @@
 package com.avenga.steamclient.steam.webapi;
 
-import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.discovery.ServerRecord;
@@ -11,10 +10,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Helper class to load servers from the Steam Directory Web API.
@@ -46,9 +42,7 @@ public class SteamDirectoryService {
      * @throws IOException if the request could not be executed
      */
     public static List<ServerRecord> getServers(SteamConfiguration configuration, int maxServers) throws IOException {
-        if (configuration == null) {
-            throw new IllegalArgumentException("configuration null");
-        }
+        Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
         Map<String, String> parameters = new HashMap<>();
         parameters.put("cellid", String.valueOf(configuration.getCellID()));
@@ -82,7 +76,7 @@ public class SteamDirectoryService {
             parameters.put("key", configuration.getWebAPIKey());
         }
 
-        URL baseUrl = new URL(Constant.WEB_API_BASE_ADDRESS);
+        URL baseUrl = new URL(configuration.getWebAPIBaseAddress());
         URL steamDirectoryUrl = new URL(baseUrl, CM_LIST_URL_PATH);
 
         return HTTP_CLIENT.get(steamDirectoryUrl)

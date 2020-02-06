@@ -21,17 +21,17 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.avenga.steamclient.enums.EMsg.*;
 
 @Getter
 @Setter
 public class CMClient {
+
+    private static final int HEART_BEAT_DELAY = 5000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CMClient.class);
 
@@ -61,14 +61,13 @@ public class CMClient {
     private final Map<EMsg, ClientPacketHandler> packetHandlers;
 
     public CMClient(SteamConfiguration configuration) {
-        if (configuration == null) {
-            throw new IllegalArgumentException("Configuration should be provided for CM client");
-        }
+        Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
         this.configuration = configuration;
         this.serverMap = new HashMap<>();
         this.heartBeatFunction = new ScheduledFunction(() ->
-                send(new ClientMessageProtobuf<CMsgClientHeartBeat.Builder>(CMsgClientHeartBeat.class, EMsg.ClientHeartBeat)), 5000);
+                send(new ClientMessageProtobuf<CMsgClientHeartBeat.Builder>(CMsgClientHeartBeat.class, EMsg.ClientHeartBeat)),
+                HEART_BEAT_DELAY);
 
         this.packetHandlers = Map.of(
                 Multi, new MultiClientPacketHandler(),
@@ -76,7 +75,8 @@ public class CMClient {
                 ClientLoggedOff, new LoggedOffClientPacketHandler(),
                 ClientServerList, new ServerListClientPacketHandler(),
                 ClientCMList, new CMListClientPacketHandler(),
-                ClientSessionToken, new SessionTokenClientPacketHandler()
+                ClientSessionToken, new SessionTokenClientPacketHandler(),
+                ClientNewLoginKey, new UserNewLoginKeyClientPacketHandler()
         );
     }
 
@@ -138,9 +138,11 @@ public class CMClient {
         LOGGER.debug(String.format("<- Recv'd EMsg: %s (%d) (Proto: %s)", packetMessage.getMessageType(),
                 packetMessage.getMessageType().code(), packetMessage.isProto()));
 
-        this.packetHandlers.getOrDefault(packetMessage.getMessageType(), ((packet, cmClient) ->
-                LOGGER.debug("Unhandled packet message type: " + packet.getMessageType())))
-                .handle(packetMessage, this);
+        var handler = this.packetHandlers.get(packetMessage.getMessageType());
+
+        if (handler != null) {
+            handler.handle(packetMessage, this);
+        }
 
         return true;
     }
@@ -152,9 +154,7 @@ public class CMClient {
      * @param message The client message to send.
      */
     public void send(ClientMessage message) {
-        if (message == null) {
-            throw new IllegalArgumentException("A value for 'message' must be supplied");
-        }
+        Objects.requireNonNull(message, "Client message wasn't provided");
 
         if (sessionID != null) {
             message.setSessionID(sessionID);
@@ -226,6 +226,15 @@ public class CMClient {
      */
     public EUniverse getUniverse() {
         return configuration.getUniverse();
+    }
+
+    /**
+     * Returns the the local IP of this client.
+     *
+     * @return The local IP.
+     */
+    public InetAddress getLocalIP() {
+        return connection.getLocalIP();
     }
 
     /**

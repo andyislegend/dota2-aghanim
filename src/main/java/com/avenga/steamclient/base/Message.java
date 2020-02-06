@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
 /**
  * Represents a struct backed message without session or client info.
@@ -65,18 +66,16 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
      * This a reply constructor.
      *
      * @param bodyType       body type
-     * @param msg            The message that this instance is a reply for.
+     * @param message            The message that this instance is a reply for.
      * @param payloadReserve The number of bytes to initialize the payload capacity to.
      */
-    public Message(Class<? extends BodyType> bodyType, BaseMessage<MsgHdr> msg, int payloadReserve) {
+    public Message(Class<? extends BodyType> bodyType, BaseMessage<MsgHdr> message, int payloadReserve) {
         this(bodyType, payloadReserve);
 
-        if (msg == null) {
-            throw new IllegalArgumentException("msg is null");
-        }
+        Objects.requireNonNull(message, "message wasn't provided");
 
         // our target is where the message came from
-        getHeader().setTargetJobID(msg.getHeader().getSourceJobID());
+        getHeader().setTargetJobID(message.getHeader().getSourceJobID());
     }
 
     /**
@@ -84,16 +83,14 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
      * This a receive constructor.
      *
      * @param bodyType body type
-     * @param msg      The packet message to build this client message from.
+     * @param message      The packet message to build this client message from.
      */
-    public Message(Class<? extends BodyType> bodyType, PacketMessage msg) {
+    public Message(Class<? extends BodyType> bodyType, PacketMessage message) {
         this(bodyType);
 
-        if (msg == null) {
-            throw new IllegalArgumentException("msg is null");
-        }
+        Objects.requireNonNull(message, "message wasn't provided");
 
-        deserialize(msg.getData());
+        deserialize(message.getData());
     }
 
     @Override
@@ -131,9 +128,8 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
 
     @Override
     public void setTargetJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getHeader().setTargetJobID(jobID.getValue());
     }
 
@@ -144,9 +140,8 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
 
     @Override
     public void setSourceJobID(JobID jobID) {
-        if (jobID == null) {
-            throw new IllegalArgumentException("jobID is null");
-        }
+        Objects.requireNonNull(jobID, "jobID wasn't provided");
+
         getHeader().setSourceJobID(jobID.getValue());
     }
 
@@ -165,9 +160,8 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
 
     @Override
     public void deserialize(byte[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data is null");
-        }
+        Objects.requireNonNull(data, "data wasn't provided");
+
         MemoryStream ms = new MemoryStream(data);
 
         try {

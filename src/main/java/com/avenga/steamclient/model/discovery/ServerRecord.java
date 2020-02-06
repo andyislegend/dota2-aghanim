@@ -4,6 +4,7 @@ import com.avenga.steamclient.enums.ProtocolType;
 
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.Objects;
 
 /**
  * Represents the information needed to connect to a CM server
@@ -14,9 +15,7 @@ public class ServerRecord {
     private EnumSet<ProtocolType> protocolTypes;
 
     public ServerRecord(InetSocketAddress endpoint, ProtocolType protocolType) {
-        if (endpoint == null) {
-            throw new IllegalArgumentException("endpoint is null");
-        }
+        Objects.requireNonNull(endpoint, "endpoint wasn't provided");
 
         this.endpoint = endpoint;
         this.protocolTypes = EnumSet.of(protocolType);
@@ -28,9 +27,7 @@ public class ServerRecord {
     }
 
     public ServerRecord(String webSocketAddress) {
-        if (webSocketAddress == null) {
-            throw new IllegalArgumentException("address is null");
-        }
+        Objects.requireNonNull(webSocketAddress, "webSocketAddress wasn't provided");
 
         final int defaultPort = 443;
         String[] split = webSocketAddress.split(":");

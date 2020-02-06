@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.zip.CRC32;
 
 public class CryptoHelper {
@@ -71,9 +72,7 @@ public class CryptoHelper {
      * @return the hashed result
      */
     public static byte[] crcHash(byte[] input) {
-        if (input == null) {
-            throw new IllegalArgumentException("input is null");
-        }
+        Objects.requireNonNull(input, "input byte array wasn't provided");
 
         CRC32 crc = new CRC32();
         crc.update(input);
@@ -111,13 +110,8 @@ public class CryptoHelper {
      * @throws CryptoException deception while encrypting
      */
     public static byte[] symmetricDecrypt(byte[] input, byte[] key, Passable<byte[]> iv) throws CryptoException {
-        if (input == null) {
-            throw new IllegalArgumentException("input is null");
-        }
-
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
+        Objects.requireNonNull(input, "input byte array wasn't provided");
+        Objects.requireNonNull(key, "key byte array wasn't provided");
 
         try {
 
@@ -160,17 +154,9 @@ public class CryptoHelper {
      * @throws CryptoException exception while encrypting
      */
     public static byte[] symmetricEncryptWithIV(byte[] input, byte[] key, byte[] iv) throws CryptoException {
-        if (input == null) {
-            throw new IllegalArgumentException("input is null");
-        }
-
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
-
-        if (iv == null) {
-            throw new IllegalArgumentException("iv is null");
-        }
+        Objects.requireNonNull(input, "input byte array wasn't provided");
+        Objects.requireNonNull(key, "key byte array wasn't provided");
+        Objects.requireNonNull(iv, "iv byte array wasn't provided");
 
         try {
 
@@ -225,17 +211,9 @@ public class CryptoHelper {
      * @throws CryptoException exception while decrypting
      */
     public static byte[] symmetricDecryptHMACIV(byte[] input, byte[] key, byte[] hmacSecret) throws CryptoException {
-        if (input == null) {
-            throw new IllegalArgumentException("input is null");
-        }
-
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
-
-        if (hmacSecret == null) {
-            throw new IllegalArgumentException("hmacSecret is null");
-        }
+        Objects.requireNonNull(input, "input byte array wasn't provided");
+        Objects.requireNonNull(key, "key byte array wasn't provided");
+        Objects.requireNonNull(hmacSecret, "hmacSecret byte array wasn't provided");
 
         if (key.length < IV_LENGTH) {
             LOGGER.debug(String.format("symmetricDecryptHMACIV used with shorter than %d byte key!", IV_LENGTH));
@@ -283,17 +261,9 @@ public class CryptoHelper {
      * @throws CryptoException exception while encrypting
      */
     public static byte[] symmetricEncryptWithHMACIV(byte[] input, byte[] key, byte[] hmacSecret) throws CryptoException {
-        if (input == null) {
-            throw new IllegalArgumentException("input is null");
-        }
-
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
-
-        if (hmacSecret == null) {
-            throw new IllegalArgumentException("hmacSecret is null");
-        }
+        Objects.requireNonNull(input, "input byte array wasn't provided");
+        Objects.requireNonNull(key, "key byte array wasn't provided");
+        Objects.requireNonNull(hmacSecret, "hmacSecret byte array wasn't provided");
 
         // IV is HMAC-SHA1(Random(3) + Plaintext) + Random(3). (Same random values for both)
         byte[] iv = new byte[IV_LENGTH];

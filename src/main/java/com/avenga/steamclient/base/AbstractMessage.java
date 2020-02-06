@@ -7,6 +7,7 @@ import com.avenga.steamclient.enums.SeekOrigin;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * This class provides a payload backing to client messages.
@@ -86,9 +87,7 @@ public abstract class AbstractMessage {
             return;
         }
 
-        if (charset == null) {
-            throw new IllegalArgumentException("charset is null");
-        }
+        Objects.requireNonNull(charset, "charset wasn't provided");
 
         write(data.getBytes(charset));
     }

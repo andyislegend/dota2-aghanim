@@ -165,11 +165,7 @@ public class TcpConnection extends Connection {
     @Override
     public InetAddress getLocalIP() {
         synchronized (netLock) {
-            if (socket == null) {
-                return null;
-            }
-
-            return socket.getLocalAddress();
+            return socket == null ? null : socket.getLocalAddress();
         }
     }
 
