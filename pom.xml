@@ -108,7 +108,6 @@
                         </goals>
                         <configuration>
                             <includeMavenTypes>direct</includeMavenTypes>
-                            <includeStdTypes>true</includeStdTypes>
                             <includeDirectories>
                                 <include>src/main/protobuf</include>
                             </includeDirectories>
@@ -140,6 +139,20 @@
                                 <source>${project.build.directory}/generated/source/protobuff/main/java</source>
                             </sources>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

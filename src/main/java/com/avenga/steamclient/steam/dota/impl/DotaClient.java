@@ -16,16 +16,12 @@ public class DotaClient extends AbstractDotaClient {
 
     private static final int DEFAULT_APPLICATION_ID = 570;
 
-    private int applicationId;
-
     public DotaClient(AbstractGameCoordinator gameCoordinator) {
-        super(gameCoordinator);
-        this.applicationId = DEFAULT_APPLICATION_ID;
+        super(gameCoordinator, DEFAULT_APPLICATION_ID);
     }
 
     public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) {
-        super(gameCoordinator);
-        this.applicationId = applicationId;
+        super(gameCoordinator, applicationId);
     }
 
     @Override
@@ -44,10 +40,5 @@ public class DotaClient extends AbstractDotaClient {
         profileCardMessage.getBody().setAccountId(accountId);
         gameCoordinator.send(profileCardMessage, applicationId, k_EMsgClientToGCGetProfileCard.getNumber());
         return ProfileCardCallbackHandler.handle(profileCardCallback).getBody().build();
-    }
-
-    @Override
-    public int getApplicationId() {
-        return applicationId;
     }
 }

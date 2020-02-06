@@ -31,6 +31,8 @@ import static com.avenga.steamclient.enums.EMsg.*;
 @Setter
 public class CMClient {
 
+    private static final int HEART_BEAT_DELAY = 5000;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CMClient.class);
 
     private SteamConfiguration configuration;
@@ -64,7 +66,8 @@ public class CMClient {
         this.configuration = configuration;
         this.serverMap = new HashMap<>();
         this.heartBeatFunction = new ScheduledFunction(() ->
-                send(new ClientMessageProtobuf<CMsgClientHeartBeat.Builder>(CMsgClientHeartBeat.class, EMsg.ClientHeartBeat)), 5000);
+                send(new ClientMessageProtobuf<CMsgClientHeartBeat.Builder>(CMsgClientHeartBeat.class, EMsg.ClientHeartBeat)),
+                HEART_BEAT_DELAY);
 
         this.packetHandlers = Map.of(
                 Multi, new MultiClientPacketHandler(),

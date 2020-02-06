@@ -20,8 +20,11 @@ public abstract class AbstractDotaClient {
 
     protected final AbstractGameCoordinator gameCoordinator;
 
-    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator) {
+    protected int applicationId;
+
+    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) {
         this.gameCoordinator = gameCoordinator;
+        this.applicationId = applicationId;
         setClientPlayedGame();
         initGCSession();
     }
@@ -31,7 +34,7 @@ public abstract class AbstractDotaClient {
         var gamePlayedCallback = client.addCallbackToQueue(ClientGameConnectTokens.code());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
         var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
-                .setGameId(getApplicationId())
+                .setGameId(applicationId)
                 .build();
         gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
         client.send(gamePlayedMessage);
@@ -42,11 +45,9 @@ public abstract class AbstractDotaClient {
         var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
-        gameCoordinator.send(clientHelloMessage, getApplicationId(), k_EMsgGCClientHello.getNumber());
+        gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello.getNumber());
         GCSessionCallbackHandler.handle(gcSessionCallback).getBody().build();
     }
-
-    public abstract int getApplicationId();
 
     public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);
 
