@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.avenga</groupId>
-    <artifactId>dota2-aghanim</artifactId>
+    <artifactId>parent-steam-client</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
 
