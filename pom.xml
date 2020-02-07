@@ -14,7 +14,11 @@
         <module>steam-language-gen</module>
     </modules>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/andyislegend/dota2-aghanim</url>
+        </repository>
+    </distributionManagement>
 </project>
