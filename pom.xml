@@ -14,4 +14,7 @@
         <module>steam-language-gen</module>
     </modules>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
 </project>
