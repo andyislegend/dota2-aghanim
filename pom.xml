@@ -6,8 +6,8 @@
 
     <groupId>com.avenga</groupId>
     <artifactId>parent-steam-client</artifactId>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
-    <version>1.0.1</version>
 
     <modules>
         <module>steam-client</module>
