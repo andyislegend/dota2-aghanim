@@ -4,7 +4,7 @@
 
     <parent>
         <groupId>com.avenga</groupId>
-        <artifactId>dota2-aghanim</artifactId>
+        <artifactId>parent-steam-client</artifactId>
         <version>1.0.0</version>
     </parent>
 
