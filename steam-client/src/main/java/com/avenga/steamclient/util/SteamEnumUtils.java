@@ -3,32 +3,28 @@ package com.avenga.steamclient.util;
 import com.avenga.steamclient.protobufs.dota.BaseGCMessages;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesId;
 import com.avenga.steamclient.protobufs.tf.GCSystemMessages;
+import com.google.protobuf.ProtocolMessageEnum;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class SteamEnumUtils {
 
-    public static String getEnumName(int messageType) {
-        var enumName = getWellKnownDOTAEnumName(messageType);
-
-        if (!StringUtils.isNullOrEmpty(enumName)) {
-            return enumName;
-        }
-
-        return "";
+    public static Optional<String> getEnumName(int messageType) {
+        return getWellKnownDOTAEnumName(messageType);
     }
 
-    public static String getWellKnownDOTAEnumName(int messageType) {
-        if (Objects.nonNull(GCSystemMessages.EGCBaseClientMsg.forNumber(messageType))) {
-            return GCSystemMessages.EGCBaseClientMsg.forNumber(messageType).name();
-        } else if (Objects.nonNull(DotaGCMessagesId.EDOTAGCMsg.forNumber(messageType))) {
-            return DotaGCMessagesId.EDOTAGCMsg.forNumber(messageType).name();
-        } else if (Objects.nonNull(BaseGCMessages.EGCBaseMsg.forNumber(messageType))) {
-            return BaseGCMessages.EGCBaseMsg.forNumber(messageType).name();
-        } else if (Objects.nonNull(GCSystemMessages.ESOMsg.forNumber(messageType))) {
-            return GCSystemMessages.ESOMsg.forNumber(messageType).name();
-        }
-
-        return "";
+    public static Optional<String> getWellKnownDOTAEnumName(int messageType) {
+        return Stream.<Function<Integer, ProtocolMessageEnum>>of(
+                GCSystemMessages.EGCBaseClientMsg::forNumber,
+                DotaGCMessagesId.EDOTAGCMsg::forNumber,
+                BaseGCMessages.EGCBaseMsg::forNumber,
+                GCSystemMessages.ESOMsg::forNumber)
+                .map(function -> function.apply(messageType))
+                .filter(Objects::nonNull)
+                .map(protocolMessageEnum -> protocolMessageEnum.getValueDescriptor().getName())
+                .findFirst();
     }
 }

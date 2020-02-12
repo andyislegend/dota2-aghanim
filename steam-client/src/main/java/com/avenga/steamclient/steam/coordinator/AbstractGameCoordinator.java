@@ -35,8 +35,8 @@ public abstract class AbstractGameCoordinator {
         var message = new ClientMessageProtobuf<CMsgGCClient.Builder>(CMsgGCClient.class, packetMessage).getBody();
         var packetGCMessage = getPacketGCMsg(message.getMsgtype(), message.getPayload().toByteArray());
 
-        LOGGER.debug(String.format("<- Recv'd GC EMsg: %s (%d) (Proto: %s)", SteamEnumUtils.getEnumName(packetGCMessage.getMessageType()),
-                packetGCMessage.getMessageType(), packetGCMessage.isProto()));
+        LOGGER.debug(String.format("<- Recv'd GC EMsg: %s (%d) (Proto: %s)", SteamEnumUtils.getEnumName(
+                packetGCMessage.getMessageType()).orElse(""), packetGCMessage.getMessageType(), packetGCMessage.isProto()));
 
         var messageCallback = callbackQueue.stream()
                 .filter(callback -> callback.getMessageCode() == packetGCMessage.getMessageType())
