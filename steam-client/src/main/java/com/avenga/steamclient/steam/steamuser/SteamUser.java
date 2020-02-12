@@ -4,6 +4,7 @@ import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.enums.EAccountType;
 import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.enums.EResult;
+import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLogon;
 import com.avenga.steamclient.model.SteamID;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogOff;
@@ -19,7 +20,7 @@ import java.util.Objects;
 
 public class SteamUser {
 
-    private SteamClient client;
+    private final SteamClient client;
 
     public SteamUser(SteamClient client) {
         this.client = client;
@@ -30,22 +31,29 @@ public class SteamUser {
      * The client should already have been connected at this point.
      *
      * @param logOnDetails The logOnDetails to use for logging on.
+     * @return response on the user logOn request
      */
     public UserLogOnResponse logOn(LogOnDetails logOnDetails) {
-        Objects.requireNonNull(logOnDetails, "LogOn details wasn't provided");
-        checkLogOnDetails(logOnDetails);
-
-        ClientMessageProtobuf<CMsgClientLogon.Builder> logon = new ClientMessageProtobuf<>(CMsgClientLogon.class, EMsg.ClientLogon);
-        SteamID steamID = new SteamID(logOnDetails.getAccountID(), logOnDetails.getAccountInstance(), client.getUniverse(), EAccountType.Individual);
-        logon.getProtoHeader().setSteamid(steamID.convertToUInt64());
-        setSessionData(logon, logOnDetails);
-        setUserLogOnCredentials(logon, logOnDetails);
-        setLoginMetadata(logon, logOnDetails);
-        setSteamGuardProperties(logon, logOnDetails);
-
-        var userLogOnCallback = client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
-        client.send(logon);
+        var userLogOnCallback = this.client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
+        sendLogonRequest(logOnDetails);
         return UserLogOnCallbackHandler.handle(userLogOnCallback);
+    }
+
+    /**
+     * Logs the client into the Steam3 network.
+     * Result will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.
+     * The client should already have been connected at this point.
+     *
+     * @param logOnDetails The logOnDetails to use for logging on.
+     * @param timeout The time which callback handler will wait before cancel it, in milliseconds.
+     *
+     * @throws CallbackTimeoutException if the wait timed out
+     * @return response on the user logOn request
+     */
+    public UserLogOnResponse logOn(LogOnDetails logOnDetails, long timeout) throws CallbackTimeoutException {
+        var userLogOnCallback = this.client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
+        sendLogonRequest(logOnDetails);
+        return UserLogOnCallbackHandler.handle(userLogOnCallback, timeout);
     }
 
     /**
@@ -57,6 +65,21 @@ public class SteamUser {
 
         // TODO: 2018-02-28 it seems like the socket is not closed after getting logged of or I am doing something horribly wrong, let's disconnect here
         client.disconnect();
+    }
+
+    private void sendLogonRequest(LogOnDetails logOnDetails) {
+        Objects.requireNonNull(logOnDetails, "LogOn details wasn't provided");
+        checkLogOnDetails(logOnDetails);
+
+        ClientMessageProtobuf<CMsgClientLogon.Builder> logon = new ClientMessageProtobuf<>(CMsgClientLogon.class, EMsg.ClientLogon);
+        SteamID steamID = new SteamID(logOnDetails.getAccountID(), logOnDetails.getAccountInstance(), client.getUniverse(), EAccountType.Individual);
+        logon.getProtoHeader().setSteamid(steamID.convertToUInt64());
+        setSessionData(logon, logOnDetails);
+        setUserLogOnCredentials(logon, logOnDetails);
+        setLoginMetadata(logon, logOnDetails);
+        setSteamGuardProperties(logon, logOnDetails);
+
+        client.send(logon);
     }
 
     private void checkLogOnDetails(LogOnDetails logOnDetails) {

@@ -2,6 +2,7 @@ package com.avenga.steamclient.steam.dota;
 
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
 import com.avenga.steamclient.base.ClientMessageProtobuf;
+import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsResponse;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon.CMsgDOTAProfileCard;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.CMsgClientHello;
@@ -45,11 +46,15 @@ public abstract class AbstractDotaClient {
         var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
-        gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello.getNumber());
+        gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
         GCSessionCallbackHandler.handle(gcSessionCallback).getBody().build();
     }
 
     public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);
 
+    public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException;
+
     public abstract CMsgDOTAProfileCard getAccountProfileCard(int accountId);
+
+    public abstract CMsgDOTAProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException;
 }
