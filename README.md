@@ -1,4 +1,4 @@
-![Logo](https://i.ibb.co/cFxKwVb/logo-aghs.png)
+![Logo](https://i.ibb.co/yyVmp7h/logo-aghs.png)
 
 # DOTA2-Aghanim
 
