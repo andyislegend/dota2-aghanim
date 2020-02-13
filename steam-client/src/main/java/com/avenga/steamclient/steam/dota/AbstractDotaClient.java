@@ -21,12 +21,16 @@ public abstract class AbstractDotaClient {
 
     protected final AbstractGameCoordinator gameCoordinator;
 
-    protected long callbackWaitTimeout = 20000;
+    /**
+     * Time which init callback handlers will wait for packet message from Steam Network server
+     */
+    protected long callbackWaitTimeout;
     protected int applicationId;
 
-    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) throws CallbackTimeoutException {
+    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator, int applicationId, long callbackWaitTimeout) throws CallbackTimeoutException {
         this.gameCoordinator = gameCoordinator;
         this.applicationId = applicationId;
+        this.callbackWaitTimeout = callbackWaitTimeout;
         setClientPlayedGame();
         initGCSession();
     }
@@ -49,15 +53,6 @@ public abstract class AbstractDotaClient {
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
         gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
         GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout).getBody().build();
-    }
-
-    /**
-     * Set time which init callback handlers will wait for packet message from Steam Network server
-     *
-     * @param callbackWaitTimeout of the callback handler
-     */
-    public void setCallbackWaitTimeout(long callbackWaitTimeout) {
-        this.callbackWaitTimeout = callbackWaitTimeout;
     }
 
     public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);

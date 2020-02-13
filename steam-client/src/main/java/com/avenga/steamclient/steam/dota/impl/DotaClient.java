@@ -17,13 +17,22 @@ import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesId.EDOTAGCMsg.
 public class DotaClient extends AbstractDotaClient {
 
     private static final int DEFAULT_APPLICATION_ID = 570;
+    private static final long DEFAULT_CALLBACK_WAIT_TIMEOUT = 20000;
 
     public DotaClient(AbstractGameCoordinator gameCoordinator) throws CallbackTimeoutException {
-        super(gameCoordinator, DEFAULT_APPLICATION_ID);
+        super(gameCoordinator, DEFAULT_APPLICATION_ID, DEFAULT_CALLBACK_WAIT_TIMEOUT);
+    }
+
+    public DotaClient(AbstractGameCoordinator gameCoordinator, long callbackWaitTimeout) throws CallbackTimeoutException {
+        super(gameCoordinator, DEFAULT_APPLICATION_ID, callbackWaitTimeout);
     }
 
     public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) throws CallbackTimeoutException {
-        super(gameCoordinator, applicationId);
+        super(gameCoordinator, applicationId, DEFAULT_CALLBACK_WAIT_TIMEOUT);
+    }
+
+    public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId, long callbackWaitTimeout) throws CallbackTimeoutException {
+        super(gameCoordinator, applicationId, callbackWaitTimeout);
     }
 
     /**
