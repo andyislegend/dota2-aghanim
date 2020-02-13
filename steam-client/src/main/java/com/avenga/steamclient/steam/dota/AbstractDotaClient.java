@@ -21,16 +21,17 @@ public abstract class AbstractDotaClient {
 
     protected final AbstractGameCoordinator gameCoordinator;
 
+    protected long callbackWaitTimeout = 20000;
     protected int applicationId;
 
-    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) {
+    public AbstractDotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) throws CallbackTimeoutException {
         this.gameCoordinator = gameCoordinator;
         this.applicationId = applicationId;
         setClientPlayedGame();
         initGCSession();
     }
 
-    protected void setClientPlayedGame() {
+    protected void setClientPlayedGame() throws CallbackTimeoutException {
         var client = gameCoordinator.getClient();
         var gamePlayedCallback = client.addCallbackToQueue(ClientGameConnectTokens.code());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
@@ -39,15 +40,24 @@ public abstract class AbstractDotaClient {
                 .build();
         gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
         client.send(gamePlayedMessage);
-        GamePlayedClientCallbackHandler.handle(gamePlayedCallback);
+        GamePlayedClientCallbackHandler.handle(gamePlayedCallback, callbackWaitTimeout);
     }
 
-    protected void initGCSession() {
+    protected void initGCSession() throws CallbackTimeoutException {
         var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
         gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
-        GCSessionCallbackHandler.handle(gcSessionCallback).getBody().build();
+        GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout).getBody().build();
+    }
+
+    /**
+     * Set time which init callback handlers will wait for packet message from Steam Network server
+     *
+     * @param callbackWaitTimeout of the callback handler
+     */
+    public void setCallbackWaitTimeout(long callbackWaitTimeout) {
+        this.callbackWaitTimeout = callbackWaitTimeout;
     }
 
     public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);

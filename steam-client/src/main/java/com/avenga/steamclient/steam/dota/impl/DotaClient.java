@@ -18,11 +18,11 @@ public class DotaClient extends AbstractDotaClient {
 
     private static final int DEFAULT_APPLICATION_ID = 570;
 
-    public DotaClient(AbstractGameCoordinator gameCoordinator) {
+    public DotaClient(AbstractGameCoordinator gameCoordinator) throws CallbackTimeoutException {
         super(gameCoordinator, DEFAULT_APPLICATION_ID);
     }
 
-    public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) {
+    public DotaClient(AbstractGameCoordinator gameCoordinator, int applicationId) throws CallbackTimeoutException {
         super(gameCoordinator, applicationId);
     }
 
