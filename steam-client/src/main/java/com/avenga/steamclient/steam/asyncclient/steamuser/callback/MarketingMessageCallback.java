@@ -3,6 +3,7 @@ package com.avenga.steamclient.steam.asyncclient.steamuser.callback;
 import com.avenga.steamclient.enums.EMarketingMessageFlags;
 import com.avenga.steamclient.generated.MsgClientMarketingMessageUpdate2;
 import com.avenga.steamclient.model.GlobalID;
+import com.avenga.steamclient.model.steam.user.MarketingMessage;
 import com.avenga.steamclient.steam.asyncclient.callbackmanager.BaseCallbackMessage;
 import com.avenga.steamclient.util.stream.BinaryReader;
 import com.avenga.steamclient.util.stream.MemoryStream;
@@ -24,44 +25,37 @@ public class MarketingMessageCallback extends BaseCallbackMessage {
     private static final Logger LOGGER = LoggerFactory.getLogger(MarketingMessageCallback.class);
 
     private Date updateTime;
-    private Collection<Message> messages;
+    private Collection<MarketingMessage> messages;
 
     public MarketingMessageCallback(MsgClientMarketingMessageUpdate2 body, byte[] payload) {
         updateTime = new Date(body.getMarketingMessageUpdateTime() * 1000L);
 
-        List<Message> msgList = new ArrayList<>();
+        List<MarketingMessage> marketingMessages = new ArrayList<>(body.getCount());
 
-        try (BinaryReader binaryReader = new BinaryReader(new MemoryStream(payload))) {
+        try (var binaryReader = new BinaryReader(new MemoryStream(payload))) {
             for (int i = 0; i < body.getCount(); i++) {
-                int totalLength = binaryReader.readInt() - 4; // total length includes the 4 byte length
-                byte[] messageData = binaryReader.readBytes(totalLength);
+                var totalLength = binaryReader.readInt() - 4; // total length includes the 4 byte length
+                var messageData = binaryReader.readBytes(totalLength);
 
-                msgList.add(new Message(messageData));
+                marketingMessages.add(getMessage(messageData));
             }
         } catch (IOException e) {
             LOGGER.debug(e.getMessage(), e);
         }
 
-        messages = Collections.unmodifiableList(msgList);
+        this.messages = Collections.unmodifiableList(marketingMessages);
     }
 
-    /**
-     * Represents a single marketing message.
-     */
-    @Getter
-    public static class Message {
-        private GlobalID id;
-        private String url;
-        private EnumSet<EMarketingMessageFlags> flags;
-
-        Message(byte[] data) {
-            try (BinaryReader br = new BinaryReader(new ByteArrayInputStream(data))) {
-                id = new GlobalID(br.readLong());
-                url = br.readNullTermString(StandardCharsets.UTF_8);
-                flags = EMarketingMessageFlags.from(br.readInt());
-            } catch (IOException e) {
-                LOGGER.debug(e.getMessage(), e);
-            }
+    private MarketingMessage getMessage(byte[] messageData) {
+        var marketingMessage = new MarketingMessage();
+        try (var binaryReader = new BinaryReader(new ByteArrayInputStream(messageData))) {
+            marketingMessage.setId(new GlobalID(binaryReader.readLong()));
+            marketingMessage.setUrl(binaryReader.readNullTermString(StandardCharsets.UTF_8));
+            marketingMessage.setFlags(EMarketingMessageFlags.from(binaryReader.readInt()));
+        } catch (IOException e) {
+            LOGGER.debug(e.getMessage(), e);
         }
+
+        return marketingMessage;
     }
 }

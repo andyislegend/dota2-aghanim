@@ -1,10 +1,10 @@
 package com.avenga.steamclient.steam.asyncclient.steamuser.callback;
 
 import com.avenga.steamclient.model.JobID;
+import com.avenga.steamclient.model.steam.user.UserOneTimePassword;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgClientUpdateMachineAuth;
 import com.avenga.steamclient.steam.asyncclient.callbackmanager.BaseCallbackMessage;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * This callback is received when the backend wants the client to update it's local machine authentication data.
@@ -15,7 +15,7 @@ public class UpdateMachineAuthCallback extends BaseCallbackMessage {
     private int bytesToWrite;
     private int offset;
     private String fileName;
-    private OTPDetails oneTimePassword;
+    private UserOneTimePassword userOneTimePassword;
 
     public UpdateMachineAuthCallback(JobID jobID, CMsgClientUpdateMachineAuth.Builder message) {
         setJobID(jobID);
@@ -25,23 +25,11 @@ public class UpdateMachineAuthCallback extends BaseCallbackMessage {
         offset = message.getOffset();
         fileName = message.getFilename();
 
-        oneTimePassword = new OTPDetails();
-        oneTimePassword.setType(message.getOtpType());
-        oneTimePassword.setIdentifier(message.getOtpIdentifier());
-        oneTimePassword.setSharedSecret(message.getOtpSharedsecret().toByteArray());
-        oneTimePassword.setTimeDrift(message.getOtpTimedrift());
+        userOneTimePassword = UserOneTimePassword.builder()
+                .type(message.getOtpType())
+                .identifier(message.getOtpIdentifier())
+                .sharedSecret(message.getOtpSharedsecret().toByteArray())
+                .timeDrift(message.getOtpTimedrift())
+                .build();
     }
-
-    /**
-     * Represents various one-time-password details.
-     */
-    @Getter
-    @Setter
-    public static class OTPDetails {
-        private int type;
-        private String identifier;
-        private byte[] sharedSecret;
-        private int timeDrift;
-    }
-
 }

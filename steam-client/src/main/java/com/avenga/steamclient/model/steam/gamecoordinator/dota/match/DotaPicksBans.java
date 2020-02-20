@@ -12,5 +12,9 @@ import lombok.NoArgsConstructor;
 public class DotaPicksBans {
     private boolean isPick;
     private int heroId;
-    private int team; // 0 - Radiant, 1 - Dire
+
+    /**
+     *  0 - Radiant side, 1 - Dire side
+     */
+    private int team;
 }
