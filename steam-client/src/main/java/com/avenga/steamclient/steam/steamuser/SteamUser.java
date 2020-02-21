@@ -17,6 +17,7 @@ import com.avenga.steamclient.util.StringUtils;
 import com.google.protobuf.ByteString;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class SteamUser {
 
@@ -31,12 +32,13 @@ public class SteamUser {
      * The client should already have been connected at this point.
      *
      * @param logOnDetails The logOnDetails to use for logging on.
-     * @return response on the user logOn request
+     * @return  CompletableFuture Callback with {@link UserLogOnResponse} on the user logOn request
      */
-    public UserLogOnResponse logOn(LogOnDetails logOnDetails) {
+    public CompletableFuture<UserLogOnResponse> logOn(LogOnDetails logOnDetails) {
         var userLogOnCallback = this.client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
         sendLogonRequest(logOnDetails);
-        return UserLogOnCallbackHandler.handle(userLogOnCallback);
+        return userLogOnCallback.getCallback()
+                .thenApply(UserLogOnCallbackHandler::getMessage);
     }
 
     /**

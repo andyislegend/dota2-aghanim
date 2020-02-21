@@ -6,10 +6,6 @@ import com.avenga.steamclient.model.steam.SteamMessageCallback;
 
 public class GamePlayedClientCallbackHandler extends AbstractCallbackHandler<PacketMessage> {
 
-    public static void handle(SteamMessageCallback<PacketMessage> callback) {
-        waitAndGetPacketMessage(callback, "GamePlayed");
-    }
-
     public static void handle(SteamMessageCallback<PacketMessage> callback, long timeout) throws CallbackTimeoutException {
         waitAndGetPacketMessage(callback, timeout, "GamePlayed");
     }
