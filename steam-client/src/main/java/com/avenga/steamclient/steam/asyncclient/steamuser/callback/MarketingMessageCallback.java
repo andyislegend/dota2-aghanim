@@ -24,6 +24,7 @@ import java.util.*;
 public class MarketingMessageCallback extends BaseCallbackMessage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MarketingMessageCallback.class);
+    private static final int DEFAULT_MESSAGE_COUNT = 100;
 
     private Instant updateTime;
     private Collection<MarketingMessage> messages;
@@ -31,10 +32,14 @@ public class MarketingMessageCallback extends BaseCallbackMessage {
     public MarketingMessageCallback(MsgClientMarketingMessageUpdate2 body, byte[] payload) {
         updateTime = Instant.ofEpochMilli(body.getMarketingMessageUpdateTime() * 1000L);
 
-        List<MarketingMessage> marketingMessages = new ArrayList<>(body.getCount());
+        //Sometimes body.getCount() can return value greater than MAX_VALUE of the Integer.
+        // Need to check this to prevent problems with heap memory.
+        var messageCount = Math.min(body.getCount(), DEFAULT_MESSAGE_COUNT);
+
+        List<MarketingMessage> marketingMessages = new ArrayList<>();
 
         try (var binaryReader = new BinaryReader(new MemoryStream(payload))) {
-            for (int i = 0; i < body.getCount(); i++) {
+            for (int i = 0; i < messageCount; i++) {
                 var totalLength = binaryReader.readInt() - 4; // total length includes the 4 byte length
                 var messageData = binaryReader.readBytes(totalLength);
 

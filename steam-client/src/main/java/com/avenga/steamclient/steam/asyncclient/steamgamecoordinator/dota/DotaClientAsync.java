@@ -84,8 +84,6 @@ public class DotaClientAsync extends ClientGCMessageHandler {
 
         Consumer<GCMessage> dispatcher = clientHandlers.get(gcMessage.geteMsg());
         if (dispatcher != null) {
-            LOGGER.debug("Handling message " + SteamEnumUtils.getEnumName(gcMessage.geteMsg()).orElse(String.valueOf(gcMessage.geteMsg()))
-                    + " by dispatcher " + dispatcher);
             dispatcher.accept(gcMessage);
         }
     }

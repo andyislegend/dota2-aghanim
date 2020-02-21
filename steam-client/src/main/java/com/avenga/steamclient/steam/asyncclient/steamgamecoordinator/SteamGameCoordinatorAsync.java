@@ -81,7 +81,6 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
 
         Consumer<PacketMessage> dispatcher = clientHandlers.get(packetMessage.getMessageType());
         if (dispatcher != null) {
-            LOGGER.debug("Handling message " + packetMessage.getMessageType() + " by dispatcher " + dispatcher);
             dispatcher.accept(packetMessage);
         }
     }
