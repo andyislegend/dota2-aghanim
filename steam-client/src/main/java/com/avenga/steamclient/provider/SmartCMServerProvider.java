@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -67,7 +68,7 @@ public class SmartCMServerProvider {
         final long cutoff = System.currentTimeMillis() - badConnectionMemoryTimeSpan;
 
         for (ServerInfo serverInfo : servers) {
-            if (serverInfo.getLastBadConnection() != null && serverInfo.getLastBadConnection().getTime() < cutoff) {
+            if (serverInfo.getLastBadConnection() != null && serverInfo.getLastBadConnection().toEpochMilli() < cutoff) {
                 serverInfo.setLastBadConnection(null);
             }
         }
@@ -115,7 +116,7 @@ public class SmartCMServerProvider {
                 serverInfo.setLastBadConnection(null);
                 break;
             case BAD:
-                serverInfo.setLastBadConnection(new Date());
+                serverInfo.setLastBadConnection(Instant.now());
                 break;
         }
     }
@@ -151,7 +152,7 @@ public class SmartCMServerProvider {
                 return 0;
             }
 
-            return o1.getLastBadConnection().before(o2.getLastBadConnection()) ? -1 : 1;
+            return o1.getLastBadConnection().isBefore(o2.getLastBadConnection()) ? -1 : 1;
         });
 
         if (serverInfos.isEmpty()) {

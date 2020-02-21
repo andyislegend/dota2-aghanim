@@ -1,6 +1,7 @@
 package com.avenga.steamclient.steam.dota.impl;
 
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
+import com.avenga.steamclient.enums.SteamGame;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgClientToGCGetProfileCard;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsRequest;
@@ -16,7 +17,7 @@ import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesId.EDOTAGCMsg.
 
 public class DotaClient extends AbstractDotaClient {
 
-    private static final int DEFAULT_APPLICATION_ID = 570;
+    private static final int DEFAULT_APPLICATION_ID = SteamGame.Dota2.getApplicationId();
     private static final long DEFAULT_CALLBACK_WAIT_TIMEOUT = 20000;
 
     public DotaClient(AbstractGameCoordinator gameCoordinator) throws CallbackTimeoutException {
