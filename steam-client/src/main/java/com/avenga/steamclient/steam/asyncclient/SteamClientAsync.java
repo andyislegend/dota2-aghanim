@@ -20,6 +20,7 @@ import com.avenga.steamclient.steam.asyncclient.steamuser.SteamUserAsync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -34,7 +35,7 @@ public class SteamClientAsync extends CMClient {
 
     private AtomicLong currentJobId = new AtomicLong(DEFAULT_ID);
 
-    private Date processStartTime;
+    private Instant processStartTime;
 
     private final Object callbackLock = new Object();
 
@@ -57,7 +58,7 @@ public class SteamClientAsync extends CMClient {
     public SteamClientAsync(SteamConfiguration configuration) {
         super(configuration);
 
-        processStartTime = new Date();
+        processStartTime = Instant.now();
 
         clientHandlers.put(EMsg.ClientCMList, this::handleCMList);
         clientHandlers.put(EMsg.ClientServerList, this::handleServerList);

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -24,11 +25,11 @@ public class MarketingMessageCallback extends BaseCallbackMessage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MarketingMessageCallback.class);
 
-    private Date updateTime;
+    private Instant updateTime;
     private Collection<MarketingMessage> messages;
 
     public MarketingMessageCallback(MsgClientMarketingMessageUpdate2 body, byte[] payload) {
-        updateTime = new Date(body.getMarketingMessageUpdateTime() * 1000L);
+        updateTime = Instant.ofEpochMilli(body.getMarketingMessageUpdateTime() * 1000L);
 
         List<MarketingMessage> marketingMessages = new ArrayList<>(body.getCount());
 

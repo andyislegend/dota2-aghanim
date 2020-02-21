@@ -11,7 +11,7 @@ import com.avenga.steamclient.util.NetworkUtils;
 import lombok.Getter;
 
 import java.net.InetAddress;
-import java.util.Date;
+import java.time.Instant;
 import java.util.EnumSet;
 
 /**
@@ -24,7 +24,7 @@ public class LoggedOnCallback extends BaseCallbackMessage {
     private int outOfGameSecsPerHeartbeat;
     private int inGameSecsPerHeartbeat;
     private InetAddress publicIP;
-    private Date serverTime;
+    private Instant serverTime;
     private EnumSet<EAccountFlags> accountFlags;
     private SteamID clientSteamID;
     private String emailDomain;
@@ -44,7 +44,7 @@ public class LoggedOnCallback extends BaseCallbackMessage {
         outOfGameSecsPerHeartbeat = response.getOutOfGameHeartbeatSeconds();
         inGameSecsPerHeartbeat = response.getInGameHeartbeatSeconds();
         publicIP = NetworkUtils.getIPAddress(response.getPublicIp());
-        serverTime = new Date(response.getRtime32ServerTime() * 1000L);
+        serverTime = Instant.ofEpochMilli(response.getRtime32ServerTime() * 1000L);
         accountFlags = EAccountFlags.from(response.getAccountFlags());
         clientSteamID = new SteamID(response.getClientSuppliedSteamid());
         emailDomain = response.getEmailDomain();
@@ -64,7 +64,7 @@ public class LoggedOnCallback extends BaseCallbackMessage {
         outOfGameSecsPerHeartbeat = response.getOutOfGameHeartbeatRateSec();
         inGameSecsPerHeartbeat = response.getInGameHeartbeatRateSec();
         publicIP = NetworkUtils.getIPAddress(response.getIpPublic());
-        serverTime = new Date(response.getServerRealTime() * 1000L);
+        serverTime = Instant.ofEpochMilli(response.getServerRealTime() * 1000L);
         clientSteamID = response.getClientSuppliedSteamId();
     }
 
