@@ -3,15 +3,17 @@ package com.avenga.steamclient.steam.dota.impl;
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
 import com.avenga.steamclient.enums.SteamGame;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
+import com.avenga.steamclient.model.steam.gamecoordinator.dota.account.DotaProfileCard;
+import com.avenga.steamclient.model.steam.gamecoordinator.dota.match.DotaMatchDetails;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgClientToGCGetProfileCard;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsRequest;
-import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsResponse;
-import com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon.CMsgDOTAProfileCard;
 import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.MatchDetailsCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.callback.ProfileCardCallbackHandler;
 import com.avenga.steamclient.steam.dota.AbstractDotaClient;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesId.EDOTAGCMsg.*;
 
@@ -41,13 +43,14 @@ public class DotaClient extends AbstractDotaClient {
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param matchId Id of the DOTA 2 match.
-     * @return details of the DOTA 2 match.
+     * @return CompletableFuture Callback with {@link DotaMatchDetails} details of the DOTA 2 match.
      */
     @Override
-    public CMsgGCMatchDetailsResponse getMatchDetails(long matchId) {
+    public CompletableFuture<DotaMatchDetails> getMatchDetails(long matchId) {
         var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
         sendMatchDetailsRequest(matchId);
-        return MatchDetailsCallbackHandler.handle(matchDetailsCallback);
+        return matchDetailsCallback.getCallback()
+                .thenApply(MatchDetailsCallbackHandler::getMessage);
     }
 
     /**
@@ -62,7 +65,7 @@ public class DotaClient extends AbstractDotaClient {
      * @return details of the DOTA 2 match.
      */
     @Override
-    public CMsgGCMatchDetailsResponse getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
+    public DotaMatchDetails getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
         var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
         sendMatchDetailsRequest(matchId);
         return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout);
@@ -73,13 +76,14 @@ public class DotaClient extends AbstractDotaClient {
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param accountId Id of the DOTA 2 user account.
-     * @return user account profile card.
+     * @return CompletableFuture Callback with {@link DotaProfileCard} user account profile card.
      */
     @Override
-    public CMsgDOTAProfileCard getAccountProfileCard(int accountId) {
+    public CompletableFuture<DotaProfileCard> getAccountProfileCard(int accountId) {
         var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
         sendProfileCardRequest(accountId);
-        return ProfileCardCallbackHandler.handle(profileCardCallback);
+        return profileCardCallback.getCallback()
+                .thenApply(ProfileCardCallbackHandler::getMessage);
     }
 
     /**
@@ -94,7 +98,7 @@ public class DotaClient extends AbstractDotaClient {
      * @return user account profile card.
      */
     @Override
-    public CMsgDOTAProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
+    public DotaProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
         var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
         sendProfileCardRequest(accountId);
         return ProfileCardCallbackHandler.handle(profileCardCallback, timeout);

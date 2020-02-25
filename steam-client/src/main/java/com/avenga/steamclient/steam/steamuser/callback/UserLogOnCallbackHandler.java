@@ -15,19 +15,13 @@ public class UserLogOnCallbackHandler extends AbstractCallbackHandler<PacketMess
 
     public static final int CALLBACK_MESSAGE_CODE = EMsg.ClientLogOnResponse.code();
 
-    public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> callback) {
-        PacketMessage packetMessage = waitAndGetPacketMessage(callback, "UserLogOn");
-
-        return getMessage(packetMessage);
-    }
-
     public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> callback, long timeout) throws CallbackTimeoutException {
         PacketMessage packetMessage = waitAndGetPacketMessage(callback, timeout, "UserLogOn");
 
         return getMessage(packetMessage);
     }
 
-    private static UserLogOnResponse getMessage(PacketMessage packetMessage) {
+    public static UserLogOnResponse getMessage(PacketMessage packetMessage) {
         return packetMessage.isProto() ? getProtoLogOnResponse(packetMessage) : getLogOnResponse(packetMessage);
     }
 
