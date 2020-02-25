@@ -3,14 +3,16 @@ package com.avenga.steamclient.steam.dota;
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
-import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsResponse;
-import com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon.CMsgDOTAProfileCard;
+import com.avenga.steamclient.model.steam.gamecoordinator.dota.account.DotaProfileCard;
+import com.avenga.steamclient.model.steam.gamecoordinator.dota.match.DotaMatchDetails;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.CMsgClientHello;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.ESourceEngine;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CMsgClientGamesPlayed;
 import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.GCSessionCallbackHandler;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.avenga.steamclient.enums.EMsg.ClientGameConnectTokens;
 import static com.avenga.steamclient.enums.EMsg.ClientGamesPlayed;
@@ -52,14 +54,14 @@ public abstract class AbstractDotaClient {
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
         gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
-        GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout).getBody().build();
+        GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout);
     }
 
-    public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId);
+    public abstract CompletableFuture<DotaMatchDetails> getMatchDetails(long matchId);
 
-    public abstract CMsgGCMatchDetailsResponse getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException;
+    public abstract DotaMatchDetails getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException;
 
-    public abstract CMsgDOTAProfileCard getAccountProfileCard(int accountId);
+    public abstract CompletableFuture<DotaProfileCard> getAccountProfileCard(int accountId);
 
-    public abstract CMsgDOTAProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException;
+    public abstract DotaProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException;
 }

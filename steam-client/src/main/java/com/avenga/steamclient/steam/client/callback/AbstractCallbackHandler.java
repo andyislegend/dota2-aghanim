@@ -14,29 +14,6 @@ import static com.avenga.steamclient.constant.Constant.TIMEOUT_EXCEPTION_MESSAGE
 
 public abstract class AbstractCallbackHandler<T> {
 
-    private static final long CHECK_CALLBACK_TIMEOUT = 200;
-
-    /**
-     * Waits for callback completion and return packet message received from the Steam Network servers.
-     *
-     * @param callback Registered callback in {@link SteamClient} callback queue.
-     * @param handlerName Name of the handler which handle current callback.
-     * @param <T> Packet message type.
-     * @return Packet message received from the the Steam Network servers.
-     */
-    protected static <T> T waitAndGetPacketMessage(SteamMessageCallback<T> callback, String handlerName) {
-        try {
-            var completableFuture = callback.getCallback();
-            while (!completableFuture.isDone()) {
-                TimeUnit.MILLISECONDS.sleep(CHECK_CALLBACK_TIMEOUT);
-            }
-
-            return completableFuture.get();
-        } catch (final InterruptedException | ExecutionException e) {
-            throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e.getMessage()) , e);
-        }
-    }
-
     /**
      * Waits for callback completion and return packet message received from the Steam Network servers.
      * Packet message will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.

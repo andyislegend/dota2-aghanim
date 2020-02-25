@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.net.InetAddress;
-import java.util.Date;
+import java.time.Instant;
 import java.util.EnumSet;
 
 @Getter
@@ -27,7 +27,7 @@ public class UserLogOnResponse {
 
     private InetAddress publicIP;
 
-    private Date serverTime;
+    private Instant serverTime;
 
     private EnumSet<EAccountFlags> accountFlags;
 
@@ -56,46 +56,30 @@ public class UserLogOnResponse {
     public UserLogOnResponse(SteammessagesClientserverLogin.CMsgClientLogonResponse.Builder response) {
         result = EResult.from(response.getEresult());
         extendedResult = EResult.from(response.getEresultExtended());
-
         outOfGameSecsPerHeartbeat = response.getOutOfGameHeartbeatSeconds();
         inGameSecsPerHeartbeat = response.getInGameHeartbeatSeconds();
-
         publicIP = NetworkUtils.getIPAddress(response.getPublicIp());
-        serverTime = new Date(response.getRtime32ServerTime() * 1000L);
-
+        serverTime = Instant.ofEpochMilli(response.getRtime32ServerTime() * 1000L);
         accountFlags = EAccountFlags.from(response.getAccountFlags());
-
         clientSteamID = new SteamID(response.getClientSuppliedSteamid());
-
         emailDomain = response.getEmailDomain();
-
         cellID = response.getCellId();
         cellIDPingThreshold = response.getCellIdPingThreshold();
-
         steam2Ticket = response.getSteam2Ticket().toByteArray();
-
         ipCountryCode = response.getIpCountryCode();
-
         webAPIUserNonce = response.getWebapiAuthenticateUserNonce();
-
         usePICS = response.getUsePics();
-
         vanityURL = response.getVanityUrl();
-
         numLoginFailuresToMigrate = response.getCountLoginfailuresToMigrate();
         numDisconnectsToMigrate = response.getCountDisconnectsToMigrate();
     }
 
     public UserLogOnResponse(MsgClientLogOnResponse response) {
         result = response.getResult();
-
         outOfGameSecsPerHeartbeat = response.getOutOfGameHeartbeatRateSec();
         inGameSecsPerHeartbeat = response.getInGameHeartbeatRateSec();
-
         publicIP = NetworkUtils.getIPAddress(response.getIpPublic());
-
-        serverTime = new Date(response.getServerRealTime() * 1000L);
-
+        serverTime = Instant.ofEpochMilli(response.getServerRealTime() * 1000L);
         clientSteamID = response.getClientSuppliedSteamId();
     }
 

@@ -4,7 +4,7 @@ import com.avenga.steamclient.enums.ProtocolType;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -12,7 +12,7 @@ public class ServerInfo {
 
     private ServerRecord record;
     private ProtocolType protocol;
-    private Date lastBadConnection;
+    private Instant lastBadConnection;
 
     public ServerInfo(ServerRecord record, ProtocolType protocol) {
         this.record = record;

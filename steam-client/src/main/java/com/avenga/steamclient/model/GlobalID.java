@@ -1,6 +1,6 @@
 package com.avenga.steamclient.model;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -61,8 +61,8 @@ public class GlobalID {
      *
      * @param startTime The start time.
      */
-    public void setStartTime(Date startTime) {
-        long startTimeSeconds = (startTime.getTime() - INITIAL_SERVER_TIME) / MILLISECOND_MULTIPLIER;
+    public void setStartTime(Instant startTime) {
+        long startTimeSeconds = (startTime.toEpochMilli() - INITIAL_SERVER_TIME) / MILLISECOND_MULTIPLIER;
         gidBits.setMask(START_TIME_BIT_OFFSET, START_TIME_MASK, startTimeSeconds);
     }
 
@@ -71,9 +71,9 @@ public class GlobalID {
      *
      * @return The start time.
      */
-    public Date getStartTime() {
+    public Instant getStartTime() {
         long startTimeSeconds = gidBits.getMask(START_TIME_BIT_OFFSET, START_TIME_MASK);
-        return new Date(startTimeSeconds * MILLISECOND_MULTIPLIER);
+        return Instant.ofEpochMilli(startTimeSeconds * MILLISECOND_MULTIPLIER);
     }
 
     /**

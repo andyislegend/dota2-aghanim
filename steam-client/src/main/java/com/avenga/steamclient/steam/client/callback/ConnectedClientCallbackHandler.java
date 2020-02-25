@@ -9,10 +9,6 @@ public class ConnectedClientCallbackHandler extends AbstractCallbackHandler<Pack
 
     public static final int CALLBACK_MESSAGE_CODE = Constant.CONNECTED_PACKET_CODE;
 
-    public static void handle(SteamMessageCallback<PacketMessage> callback) {
-        waitAndGetPacketMessage(callback, "ConnectedClient");
-    }
-
     public static void handle(SteamMessageCallback<PacketMessage> callback, long timeout) throws CallbackTimeoutException {
         waitAndGetPacketMessage(callback, timeout, "ConnectedClient");
     }

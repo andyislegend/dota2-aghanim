@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -69,12 +70,13 @@ public class SteamClient extends CMClient {
 
     /**
      * Establish connection with Steam Network server.
+     *
+     * @return CompletableFuture Callback which will be complete when {@link SteamClient} will be connected to server.
      */
-    @Override
-    public void connect() {
+    public CompletableFuture<PacketMessage> connectAndGetCallback() {
         var callback = addCallbackToQueue(ConnectedClientCallbackHandler.CALLBACK_MESSAGE_CODE);
         super.connect();
-        ConnectedClientCallbackHandler.handle(callback);
+        return callback.getCallback();
     }
 
     /**
