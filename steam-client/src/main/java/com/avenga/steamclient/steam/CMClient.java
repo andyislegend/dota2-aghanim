@@ -135,8 +135,8 @@ public class CMClient {
             return false;
         }
 
-        LOGGER.debug(String.format("<- Recv'd EMsg: %s (%d) (Proto: %s)", packetMessage.getMessageType(),
-                packetMessage.getMessageType().code(), packetMessage.isProto()));
+        LOGGER.debug("<- Recv'd EMsg: {} ({}) (Proto: {})", packetMessage.getMessageType(),
+                packetMessage.getMessageType().code(), packetMessage.isProto());
 
         var handler = this.packetHandlers.get(packetMessage.getMessageType());
 
@@ -164,7 +164,7 @@ public class CMClient {
             message.setSteamID(steamID);
         }
 
-        LOGGER.debug(String.format("Sent -> EMsg: %s (Proto: %s)", message.getMsgType(), message.isProto()));
+        LOGGER.debug("Sent -> EMsg: {} (Proto: {})", message.getMsgType(), message.isProto());
 
         // we'll swallow any network failures here because they will be thrown later
         // on the network thread, and that will lead to a disconnect callback

@@ -13,7 +13,6 @@ import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.ESourceEngine;
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.dota.callback.ClientWelcomeCallback;
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.dota.callback.DotaAccountProfileCardCallback;
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.dota.callback.DotaMatchDetailsCallback;
-import com.avenga.steamclient.util.SteamEnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +61,7 @@ public class DotaClientAsync extends ClientGCMessageHandler {
         var matchRequestMessage = new ClientGCProtobufMessage<CMsgGCMatchDetailsRequest.Builder>(CMsgGCMatchDetailsRequest.class,
                 k_EMsgGCMatchDetailsRequest.getNumber());
         matchRequestMessage.getBody().setMatchId(matchId);
-        gameCoordinator.send(matchRequestMessage, applicationId);
+        gameCoordinator.send(matchRequestMessage, applicationId, k_EMsgGCMatchDetailsRequest);
     }
 
     /**
@@ -75,7 +74,7 @@ public class DotaClientAsync extends ClientGCMessageHandler {
         var profileCardMessage = new ClientGCProtobufMessage<CMsgClientToGCGetProfileCard.Builder>(CMsgClientToGCGetProfileCard.class,
                 k_EMsgClientToGCGetProfileCard.getNumber());
         profileCardMessage.getBody().setAccountId(accountId);
-        gameCoordinator.send(profileCardMessage, applicationId);
+        gameCoordinator.send(profileCardMessage, applicationId, k_EMsgClientToGCGetProfileCard);
     }
 
     @Override

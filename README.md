@@ -91,24 +91,258 @@ compile group: 'com.avenga', name: 'steam-client', version: '1.0.0'
 ```
 
 ## How to use DOTA2-Aghanim
-```java
+**Dota2-Aghanim** provide two types of the Steam client:
+- synchronous, represented by `SteamClient` class.
+- asynchronous, represented by `SteamClientAsync` class.
 
-public static void main(String[] args) {  
+Synchronous client provide two types of methods:
+1) Regular methods, e.g. `steamUser.logOn(logOnDetails)`. It will provide registered in queue `CompletableFuture` callback 
+and developer can handle it according to the business logic of the application.
+2) Methods with timeout argument, e.g. `steamUser.logOn(logOnDetails, timeout)` It will automatically handle 
+`CompletableFuture` callback and return Steam server response or throw `CallbackTimeoutException` in case response 
+won't be received during specified time.
+
+Developer should consider next Steam Network and Game Coordinator behavior: 
+> Sometimes Steam server could ignore request and won't respond on client request. When developer want to use CompletableFuture from regular methods of the synchronous client, better always to keep this in mind.
+
+Before making calls to Steam Network and Game Coordinator services you need to open connection and login to Steam server.
+  ###### LogIn to Steam server using synchronous Steam client and regular methods:
+ ```java
+public static void main(String[] args) throws CallbackTimeoutException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+        var timeoutInMillis = 15000;
+        var steamClient = new SteamClient();
+
+        steamClient.connectAndGetCallback()
+                .thenAccept((packetMessage) -> System.out.println("Successfully connected to Steam Network!"))
+                .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+
+        var details = new LogOnDetails();
+        details.setUsername(args[0]);
+        details.setPassword(args[1]);
+
+        var steamUser = new SteamUser(steamClient);
+        steamUser.logOn(details)
+                .thenAccept((logOnResponse) -> System.out.println("Result of logOn response: " + logOnResponse.getResult().name()))
+                .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+        
+        // now You can query for data using Steam Network API.
+    }
+}
+ ```
+
+###### LogIn to Steam server using synchronous Steam client and methods with timeout:
+ ```java
+public static void main(String[] args) throws CallbackTimeoutException {
+    var timeoutInMillis = 15000;
     var steamClient = new SteamClient();
-    steamClient.connect();
+
+    steamClient.connect(timeoutInMillis);
+    System.out.println("Successfully connected to Steam Network!");
 
     var details = new LogOnDetails();
-    steamUser = new SteamUser(steamClient);
     details.setUsername(args[0]);
     details.setPassword(args[1]);
-    steamUser.logOn(details)
 
-    var client = new DotaClient(new GameCoordinator(steamClient));
-    // now You can query for data using DotaClient
+    var steamUser = new SteamUser(steamClient);
+    try {
+        var logOnResponse = steamUser.logOn(details, timeoutInMillis);
+        System.out.println("Result of logOn response: " + logOnResponse.getResult().name());
+    } catch (CallbackTimeoutException e) {
+        // You can retry or simply disconnect here and try later on.
+        steamClient.disconnect();
+    }
+    // now You can query for data using Steam Network API.
+}
+ ```
 
+###### LogIn to Steam server using asynchronous Steam client:
+ ```java
+public static void main(String[] args) {
+    if (args.length < 2) {
+        System.out.println("Sample1: No username and password specified!");
+        return;
+    }
+
+    Logger.getRootLogger().setLevel(Level.DEBUG);
+    BasicConfigurator.configure();
+    new ReadmeAsync(args[0], args[1]).run();
+}
+
+@Override
+public void run() {
+    // create our steamclient instance
+    steamClient = new SteamClientAsync();
+
+    // create the callback manager which will route callbacks to function calls
+    manager = new DefaultCallbackManager(steamClient);
+
+    // get the steamuser handler, which is used for logging on after successfully connecting
+    steamUser = steamClient.getHandler(SteamUserAsync.class);
+
+    manager.subscribe(ConnectedCallback.class, this::onConnected);
+    manager.subscribe(DisconnectedCallback.class, this::onDisconnected);
+
+    manager.subscribe(LoggedOnCallback.class, this::onLoggedOn);
+    manager.subscribe(LoggedOffCallback.class, this::onLoggedOff);
+
+    // Here we will need to subscribe on Steam APIs messages which we want to receive from Steam Network.
+
+    isRunning = true;
+
+    System.out.println("Connecting to steam...");
+
+    // initiate the connection
+    steamClient.connect();
+
+    // create our callback handling loop
+    while (isRunning) {
+        // in order for the callbacks to get routed, they need to be handled by the manager
+        manager.runWaitCallbacks(1000L);
+    }
+}
+
+private void onConnected(ConnectedCallback callback) {
+    System.out.println("Connected to Steam! Logging in " + username + "...");
+
+    LogOnDetails details = new LogOnDetails();
+    details.setUsername(username);
+    details.setPassword(password);
+
+    steamUser.logOn(details);
+}
+
+private void onDisconnected(DisconnectedCallback callback) {
+    System.out.println("Disconnected from Steam");
+    isRunning = false;
+}
+
+private void onLoggedOn(LoggedOnCallback callback) {
+    if (callback.getResult() != EResult.OK) {
+        if (callback.getResult() == EResult.AccountLogonDenied) {
+            System.out.println("Unable to logon to Steam: This account is SteamGuard protected.");
+            isRunning = false;
+            return;
+        }
+
+        System.out.println("Unable to logon to Steam: " + callback.getResult());
+        isRunning = false;
+        return;
+
+    }
+    System.out.println("Logon to Steam: " + callback.getResult());
+    // now You need to make request to nexxt Steam API service or You can logOff:
     steamUser.logOff();
+    isRunning = false;
+}
+
+private void onLoggedOff(LoggedOffCallback callback) {
+    System.out.println("Logged off of Steam: " + callback.getResult());
+    isRunning = false;
+}
+ ```
+
+After successful login, we can init session with Game Coordinator server and request DOTA2 related data:
+###### Request DOTA2 Match details using synchronous Dota client and regular methods:
+ ```java
+public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException, CallbackTimeoutException {
+    var timeoutInMillis = 15000;
+    var steamClient = new SteamClient();
+
+    //Here we already open connection and logIn to Steam Network
+    
+    // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
+    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var dotaMatchId = 5239025268L;
+    dotaClient.getMatchDetails(dotaMatchId)
+            .thenAccept(matchDetails -> System.out.println("Match duration time: " + matchDetails.getDuration()))
+            .get(timeoutInMillis, TimeUnit.MILLISECONDS);
 }
 ```
+
+###### Request DOTA2 Match details using synchronous Dota client and methods with timeout:
+ ```java
+public static void main(String[] args) throws CallbackTimeoutException {
+    var timeoutInMillis = 15000;
+    var steamClient = new SteamClient();
+
+    //Here we already open connection and logIn to Steam Network
+    
+    // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
+    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var dotaMatchId = 5239025268L;
+    var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
+    System.out.println("Match duration time: " + matchDetails.getDuration());
+}
+
+```
+
+###### Request DOTA2 Match details using asynchronous Dota client:
+ ```java
+@Override
+public void run() {
+    //Here we already register callbacks for handling open connection and logIn callbacks
+
+    manager.subscribe(GameConnectTokensCallback.class, this::onGameTokens);
+    manager.subscribe(ClientWelcomeCallback.class, this::onClientWelcome);
+
+    manager.subscribe(DotaMatchDetailsCallback.class, this::onMatchDetails);
+
+    //Here we already open connection and launch callback manager
+}
+
+private void onLoggedOn(LoggedOnCallback callback) {
+    if (callback.getResult() != EResult.OK) {
+        if (callback.getResult() == EResult.AccountLogonDenied) {
+            System.out.println("Unable to logon to Steam: This account is SteamGuard protected.");
+            isRunning = false;
+            return;
+        }
+
+        System.out.println("Unable to logon to Steam: " + callback.getResult());
+        isRunning = false;
+        return;
+
+    }
+    System.out.println("Logon to Steam: " + callback.getResult());
+    gameServerAsync.sendGamePlayed(SteamGame.Dota2.getApplicationId());
+}
+
+// Callback for handling Game played response
+private void onGameTokens(GameConnectTokensCallback callback) {
+    try {
+        System.out.println("GameConnectTokens:");
+        System.out.println(mapper.writeValueAsString(callback));;
+    } catch (JsonProcessingException e) {
+        System.out.println(e.getMessage());
+    }
+    dotaClientAsync.sendClientHello();
+}
+
+private void onClientWelcome(ClientWelcomeCallback callback) {
+    try {
+        System.out.println("ClientWelcome:");
+        System.out.println(mapper.writeValueAsString(callback));;
+    } catch (JsonProcessingException e) {
+        System.out.println(e.getMessage());
+    }
+
+    dotaClientAsync.requestMatchDetails(5239025268L);
+}
+
+private void onMatchDetails(DotaMatchDetailsCallback callback) {
+    try {
+        System.out.println("MatchDetails:");
+        System.out.println(mapper.writeValueAsString(callback));;
+    } catch (JsonProcessingException e) {
+        System.out.println(e.getMessage());
+    }
+    dotaClientAsync.requestAccountProfileCard(137935311);
+}
+ ```
+
+## Examples
+Examples can be found on our [Wiki page](https://github.com/andyislegend/dota2-aghanim/wiki).
 
 ## Build
 To build library from scratch clone this repo and after that execute next command from `root` folder of the project:

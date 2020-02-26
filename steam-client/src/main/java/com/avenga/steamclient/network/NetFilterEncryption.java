@@ -15,7 +15,7 @@ public class NetFilterEncryption implements INetFilterEncryption {
 
     public NetFilterEncryption(byte[] sessionKey) {
         if (sessionKey.length != AES_KEY_LENGTH) {
-            LOGGER.debug(String.format("AES session key was not %d bytes!", AES_KEY_LENGTH));
+            LOGGER.debug("AES session key was not " + AES_KEY_LENGTH + " bytes!");
         }
         this.sessionKey = sessionKey;
     }

@@ -66,8 +66,8 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            packetMessages.forEach(message -> LOGGER.debug(String.format("<- Part of Multi - EMsg: %s (%d) (Proto: %s)",
-                    message.getMessageType(), message.getMessageType().code(), message.isProto())));
+            packetMessages.forEach(message -> LOGGER.debug("<- Part of Multi - EMsg: {} ({}) (Proto: {})",
+                    message.getMessageType(), message.getMessageType().code(), message.isProto()));
         }
 
         for (PacketMessage message : packetMessages) {
