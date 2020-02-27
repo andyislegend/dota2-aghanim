@@ -116,7 +116,7 @@ public class CryptoHelper {
         try {
 
             if (key.length != CRYPTO_KEY_LENGTH) {
-                LOGGER.debug(String.format("SymmetricDecrypt used with non %d byte key!", CRYPTO_KEY_LENGTH));
+                LOGGER.debug("SymmetricDecrypt used with non " + CRYPTO_KEY_LENGTH + " byte key!");
             }
 
             Cipher cipher = Cipher.getInstance(ALGORITHM_WITHOUT_PADDING, SEC_PROV);
@@ -161,7 +161,7 @@ public class CryptoHelper {
         try {
 
             if (key.length != CRYPTO_KEY_LENGTH) {
-                LOGGER.debug(String.format("SymmetricEncrypt used with non %d byte key!", CRYPTO_KEY_LENGTH));
+                LOGGER.debug("SymmetricEncrypt used with non " + CRYPTO_KEY_LENGTH + " byte key!");
             }
 
             // encrypt iv using ECB and provided key
@@ -216,7 +216,7 @@ public class CryptoHelper {
         Objects.requireNonNull(hmacSecret, "hmacSecret byte array wasn't provided");
 
         if (key.length < IV_LENGTH) {
-            LOGGER.debug(String.format("symmetricDecryptHMACIV used with shorter than %d byte key!", IV_LENGTH));
+            LOGGER.debug("symmetricDecryptHMACIV used with shorter than " + IV_LENGTH + " byte key!");
         }
 
         byte[] truncatedKeyForHmac = new byte[IV_LENGTH];
