@@ -17,7 +17,7 @@ public class NetFilterEncryptionWithHMAC implements INetFilterEncryption {
 
     public NetFilterEncryptionWithHMAC(byte[] sessionKey) {
         if (sessionKey.length != AES_KEY_LENGTH) {
-            LOGGER.debug(String.format("AES session key was not %d bytes!", AES_KEY_LENGTH));
+            LOGGER.debug("AES session key was not " + AES_KEY_LENGTH + " bytes!");
         }
         this.sessionKey = sessionKey;
         this.hmacSecret = new byte[IV_LENGTH];

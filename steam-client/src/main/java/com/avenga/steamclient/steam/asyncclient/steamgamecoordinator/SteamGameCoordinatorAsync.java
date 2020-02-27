@@ -14,7 +14,9 @@ import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.C
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.dota.DotaClientAsync;
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.dota.callback.ClientWelcomeCallback;
 import com.avenga.steamclient.util.MessageUtil;
+import com.avenga.steamclient.util.SteamEnumUtils;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ProtocolMessageEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,12 +50,15 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
      * @param gcMessage   The GC message to send.
      * @param applicationId The application id of the game coordinator to send to.
      */
-    public void send(ClientGCMessage gcMessage, int applicationId) {
+    public void send(ClientGCMessage gcMessage, int applicationId, ProtocolMessageEnum messageEnum) {
         Objects.requireNonNull(gcMessage, "GC message wasn't provided");
+
+        LOGGER.debug("Sent GC -> EMsg: {} (id: {})", messageEnum.getValueDescriptor().getName(),
+                messageEnum.getNumber());
 
         ClientMessageProtobuf<CMsgGCClient.Builder> clientMsg = new ClientMessageProtobuf<>(CMsgGCClient.class, EMsg.ClientToGC);
         clientMsg.getProtoHeader().setRoutingAppid(applicationId);
-        clientMsg.getBody().setMsgtype(MessageUtil.makeGCMsg(gcMessage.getMessageType(), gcMessage.isProto()));
+        clientMsg.getBody().setMsgtype(MessageUtil.makeGCMsg(messageEnum.getNumber(), gcMessage.isProto()));
         clientMsg.getBody().setAppid(applicationId);
         clientMsg.getBody().setPayload(ByteString.copyFrom(gcMessage.serialize()));
 
@@ -72,7 +77,7 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
 
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(sourceEngine);
-        this.send(clientHelloMessage, applicationId);
+        this.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
     }
 
     @Override
@@ -124,6 +129,11 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
         ClientMessageProtobuf<CMsgGCClient.Builder> msg = new ClientMessageProtobuf<>(CMsgGCClient.class, packetMessage);
 
         var gcMessage = new GCMessage(msg.getBody());
+
+        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {}) (AppId: {})",
+                SteamEnumUtils.getEnumName(gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(),
+                gcMessage.isProto(), gcMessage.getApplicationID());
+
         gcHandlers.forEach((clazz, handler) -> {
             if (handler.getApplicationId() == gcMessage.getApplicationID()) {
                 handler.handleMessage(gcMessage);

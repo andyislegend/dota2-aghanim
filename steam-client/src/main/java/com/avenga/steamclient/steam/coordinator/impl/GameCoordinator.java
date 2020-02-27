@@ -29,8 +29,7 @@ public class GameCoordinator extends AbstractGameCoordinator {
     public void send(ClientGCMessage message, int appId, ProtocolMessageEnum messageEnum) {
         Objects.requireNonNull(message, "Client Game Coordinator message wasn't provided");
 
-        LOGGER.debug(String.format("Sent GC -> EMsg: %s (id: %d)", messageEnum.getValueDescriptor().getName(),
-                messageEnum.getNumber()));
+        LOGGER.debug("Sent GC -> EMsg: {} (id: {})", messageEnum.getValueDescriptor().getName(), messageEnum.getNumber());
 
         var clientMsg = new ClientMessageProtobuf<CMsgGCClient.Builder>(CMsgGCClient.class, EMsg.ClientToGC);
         clientMsg.getProtoHeader().setRoutingAppid(appId);

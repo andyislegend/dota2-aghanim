@@ -233,9 +233,9 @@ public class UdpConnection extends Connection {
         inSeqAcked = inSeq;
         packet.getHeader().setSeqAck(inSeqAcked);
 
-        LOGGER.debug(String.format("Sent -> %s Seq %d Ack %d; %d bytes; Message: %d bytes %d packets",
+        LOGGER.debug("Sent -> {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets",
                 packet.getHeader().getPacketType(), packet.getHeader().getSeqThis(), packet.getHeader().getSeqAck(),
-                packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg()));
+                packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg());
 
         byte[] data = packet.getData();
 
@@ -370,9 +370,9 @@ public class UdpConnection extends Connection {
             return;
         }
 
-        LOGGER.debug(String.format("<- Recv'd %s Seq %d Ack %d; %d bytes; Message: %d bytes %d packets",
+        LOGGER.debug("<- Recv'd {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets",
                 packet.getHeader().getPacketType(), packet.getHeader().getSeqThis(), packet.getHeader().getSeqAck(),
-                packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg()));
+                packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg());
 
         // Throw away any duplicate messages we've already received, making sure to
         // re-ack it in case it got lost.
