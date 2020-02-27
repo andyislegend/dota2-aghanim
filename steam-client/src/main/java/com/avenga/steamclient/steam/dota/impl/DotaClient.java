@@ -47,7 +47,7 @@ public class DotaClient extends AbstractDotaClient {
      */
     @Override
     public CompletableFuture<DotaMatchDetails> getMatchDetails(long matchId) {
-        var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
+        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
         sendMatchDetailsRequest(matchId);
         return matchDetailsCallback.getCallback()
                 .thenApply(MatchDetailsCallbackHandler::getMessage);
@@ -66,7 +66,7 @@ public class DotaClient extends AbstractDotaClient {
      */
     @Override
     public DotaMatchDetails getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
-        var matchDetailsCallback = gameCoordinator.addCallback(k_EMsgGCMatchDetailsResponse.getNumber());
+        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
         sendMatchDetailsRequest(matchId);
         return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout);
     }
@@ -80,7 +80,7 @@ public class DotaClient extends AbstractDotaClient {
      */
     @Override
     public CompletableFuture<DotaProfileCard> getAccountProfileCard(int accountId) {
-        var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
+        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
         sendProfileCardRequest(accountId);
         return profileCardCallback.getCallback()
                 .thenApply(ProfileCardCallbackHandler::getMessage);
@@ -99,7 +99,7 @@ public class DotaClient extends AbstractDotaClient {
      */
     @Override
     public DotaProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
-        var profileCardCallback = gameCoordinator.addCallback(k_EMsgClientToGCGetProfileCardResponse.getNumber());
+        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
         sendProfileCardRequest(accountId);
         return ProfileCardCallbackHandler.handle(profileCardCallback, timeout);
     }
