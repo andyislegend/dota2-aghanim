@@ -13,6 +13,8 @@ import com.avenga.steamclient.provider.SmartCMServerProvider;
 import com.avenga.steamclient.steam.handler.*;
 import com.avenga.steamclient.util.MessageUtil;
 import com.avenga.steamclient.util.ScheduledFunction;
+import com.avenga.steamclient.util.network.DebugNetworkListener;
+import com.avenga.steamclient.util.network.PacketDebugNetworkListener;
 import com.avenga.steamclient.util.stream.BinaryReader;
 import lombok.Getter;
 import lombok.Setter;
@@ -53,6 +55,11 @@ public class CMClient {
     private final Object connectionLock = new Object();
 
     private Connection connection;
+
+    /**
+     * Use this for debugging only. For your convenience, you can use {@link PacketDebugNetworkListener} class.
+     */
+    private DebugNetworkListener debugNetworkListener;
 
     private ScheduledFunction heartBeatFunction;
 
@@ -138,6 +145,17 @@ public class CMClient {
         LOGGER.debug("<- Recv'd EMsg: {} ({}) (Proto: {})", packetMessage.getMessageType(),
                 packetMessage.getMessageType().code(), packetMessage.isProto());
 
+        // Multi message gets logged down the line after it's decompressed
+        if (!packetMessage.getMessageType().equals(Multi)) {
+            try {
+                if (Objects.nonNull(debugNetworkListener)) {
+                    debugNetworkListener.onPacketMessageReceived(packetMessage.getMessageType(), packetMessage.getData());
+                }
+            } catch (Exception e) {
+                LOGGER.debug("DebugNetworkListener threw an exception", e);
+            }
+        }
+
         var handler = this.packetHandlers.get(packetMessage.getMessageType());
 
         if (handler != null) {
@@ -166,6 +184,14 @@ public class CMClient {
 
         LOGGER.debug("Sent -> EMsg: {} (Proto: {})", message.getMsgType(), message.isProto());
 
+        try {
+            if (Objects.nonNull(debugNetworkListener)) {
+                debugNetworkListener.onPacketMessageSent(message.getMsgType(), message.serialize());
+            }
+        } catch (Exception e) {
+            LOGGER.debug("DebugNetworkListener threw an exception", e);
+        }
+
         // we'll swallow any network failures here because they will be thrown later
         // on the network thread, and that will lead to a disconnect callback
         // down the line
@@ -181,14 +207,7 @@ public class CMClient {
             return null;
         }
 
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(data));
-
-        int rawEMsg = 0;
-        try {
-            rawEMsg = reader.readInt();
-        } catch (IOException e) {
-            LOGGER.debug("Exception while getting EMsg code", e);
-        }
+        int rawEMsg = MessageUtil.getRawEMsg(data);
         EMsg eMsg = MessageUtil.getMessage(rawEMsg);
 
         if (eMsg == EMsg.ChannelEncryptRequest || eMsg == EMsg.ChannelEncryptResponse || eMsg == EMsg.ChannelEncryptResult) {

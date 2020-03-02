@@ -2,24 +2,30 @@ package com.avenga.steamclient.steam.dota;
 
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
 import com.avenga.steamclient.base.ClientMessageProtobuf;
+import com.avenga.steamclient.constant.ServiceMethodConstant;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.model.steam.gamecoordinator.dota.account.DotaProfileCard;
 import com.avenga.steamclient.model.steam.gamecoordinator.dota.match.DotaMatchDetails;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.CMsgClientHello;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.ESourceEngine;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CMsgClientGamesPlayed;
+import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.GCSessionCallbackHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
-import static com.avenga.steamclient.enums.EMsg.ClientGameConnectTokens;
-import static com.avenga.steamclient.enums.EMsg.ClientGamesPlayed;
+import static com.avenga.steamclient.enums.EMsg.*;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientHello;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientWelcome;
 
 public abstract class AbstractDotaClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDotaClient.class);
 
     protected final AbstractGameCoordinator gameCoordinator;
 
@@ -37,24 +43,33 @@ public abstract class AbstractDotaClient {
         initGCSession();
     }
 
+    public SteamClient getClient() {
+        return gameCoordinator.getClient();
+    }
+
     protected void setClientPlayedGame() throws CallbackTimeoutException {
-        var client = gameCoordinator.getClient();
-        var gamePlayedCallback = client.addCallbackToQueue(ClientGameConnectTokens.code());
-        var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
+        var gamePlayedCallback = getClient().addCallbackToQueue(ClientConcurrentSessionsBase.code(), getPLayedGameProperties());
+        var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayedWithDataBlob);
         var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
                 .setGameId(applicationId)
                 .build();
         gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
-        client.send(gamePlayedMessage);
+        getClient().send(gamePlayedMessage);
         GamePlayedClientCallbackHandler.handle(gamePlayedCallback, callbackWaitTimeout);
     }
 
     protected void initGCSession() throws CallbackTimeoutException {
-        var gcSessionCallback = gameCoordinator.addCallback(k_EMsgGCClientWelcome.getNumber());
+        var gcSessionCallback = getClient().addGCCallbackToQueue(k_EMsgGCClientWelcome.getNumber(), applicationId);
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
         gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
         GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout);
+    }
+
+    private Properties getPLayedGameProperties() {
+        return new Properties() {{
+            put(ServiceMethodConstant.PLAYER_LAST_PLAYED_TIMES, applicationId);
+        }};
     }
 
     public abstract CompletableFuture<DotaMatchDetails> getMatchDetails(long matchId);
