@@ -143,9 +143,8 @@ public class ClientMessageProtobuf<BodyType extends GeneratedMessageV3.Builder<B
     @Override
     public void deserialize(byte[] data) {
         Objects.requireNonNull(data, "data wasn't provided");
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(data));
 
-        try {
+        try (var reader = new BinaryReader(new ByteArrayInputStream(data))) {
             getHeader().deserialize(reader);
             final Method m = clazz.getMethod("newBuilder");
             body = (BodyType) m.invoke(null);
