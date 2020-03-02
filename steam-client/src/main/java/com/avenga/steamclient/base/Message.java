@@ -147,7 +147,7 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
 
     @Override
     public byte[] serialize() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(0)) {
+        try (var baos = new ByteArrayOutputStream(0)) {
             getHeader().serialize(baos);
             body.serialize(baos);
             baos.write(payload.toByteArray());
@@ -162,7 +162,7 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
     public void deserialize(byte[] data) {
         Objects.requireNonNull(data, "data wasn't provided");
 
-        try (MemoryStream ms = new MemoryStream(data)) {
+        try (var ms = new MemoryStream(data)) {
             getHeader().deserialize(ms);
             body.deserialize(ms);
 
