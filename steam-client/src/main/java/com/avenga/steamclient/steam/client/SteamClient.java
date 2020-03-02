@@ -11,6 +11,7 @@ import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.steam.CompletableCallback;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.model.steam.gamecoordinator.GCMessage;
+import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgClientPlayingSessionState;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgGCClient;
 import com.avenga.steamclient.steam.CMClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
@@ -20,11 +21,16 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+
+import static com.avenga.steamclient.constant.ServiceMethodConstant.PLAYER_LAST_PLAYED_TIMES;
 
 public class SteamClient extends CMClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SteamClient.class);
@@ -72,9 +78,27 @@ public class SteamClient extends CMClient {
     }
 
     /**
-     * Creates and add steam client callback wrapper for handling {@link GCPacketMessage} received from Game Coordinator server.
+     * Creates and add steam client callback wrapper for handling {@link PacketMessage} received from Steam Network.
      *
      * @param messageCode Code of the packet message.
+     * @param properties  Additional properties of the callback.
+     * @return Callback wrapper which hold packet message callback.
+     */
+    public SteamMessageCallback<PacketMessage> addCallbackToQueue(int messageCode, Properties properties) {
+        var steamCallback = new SteamMessageCallback<>(messageCode, CLIENT_APPLICATION_ID, queueSequence.getAndIncrement(),
+                new CompletableFuture<PacketMessage>(), properties);
+
+        if (!callbacksQueue.offer(steamCallback)) {
+            throw new CallbackQueueException("Callback for handling message with code '" + messageCode + "' wasn't added to queue");
+        }
+
+        return steamCallback;
+    }
+
+    /**
+     * Creates and add steam client callback wrapper for handling {@link GCPacketMessage} received from Game Coordinator server.
+     *
+     * @param messageCode   Code of the packet message.
      * @param applicationId Id of the Steam client or games.
      * @return Callback wrapper which hold Game Coordinator packet message callback.
      */
@@ -105,7 +129,6 @@ public class SteamClient extends CMClient {
      * Establish connection with Steam Network server for specified time.
      *
      * @param timeout Time during which handler will wait for callback.
-     *
      * @throws CallbackTimeoutException if the wait timed out
      */
     public void connect(long timeout) throws CallbackTimeoutException {
@@ -126,7 +149,7 @@ public class SteamClient extends CMClient {
 
     /**
      * Handle packet message received from Steam Network or Game Coordinator server.
-     *
+     * <p>
      * Based on packet message type received from server first callback from
      * the {@link SteamClient} or {@link AbstractGameCoordinator} queue will picked and complete.
      *
@@ -145,6 +168,8 @@ public class SteamClient extends CMClient {
                     gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(), gcMessage.isProto());
 
             findAndCompleteCallback(gcMessage.geteMsg(), gcMessage.getApplicationID(), gcMessage.getMessage());
+        } else if (packetMessage.getMessageType() == EMsg.ClientPlayingSessionState || packetMessage.getMessageType() == EMsg.ClientConcurrentSessionsBase) {
+            handleGamePlayingSession(packetMessage);
         } else {
             findAndCompleteCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage);
         }
@@ -187,4 +212,30 @@ public class SteamClient extends CMClient {
         return new GCMessage(gcClientMessage.getBody());
     }
 
+    private void handleGamePlayingSession(PacketMessage packetMessage) {
+        ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
+                CMsgClientPlayingSessionState.class, packetMessage);
+        var playingSession = playingSessionBuilder.getBody().build();
+        LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
+
+        Predicate<CompletableCallback> predicate = completableCallback -> Objects.nonNull(completableCallback.getProperties())
+                && String.valueOf(playingSession.getPlayingApp()).equals(
+                completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
+
+        findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
+    }
+
+    private <T> void findAndCompleteServiceMethodCallback(int messageCode, int applicationId, T packetMessage,
+                                                          Predicate<CompletableCallback> predicate) {
+        Optional<CompletableCallback> messageCallback = callbacksQueue.stream()
+                .filter(callback -> callback.getMessageCode() == messageCode
+                        && callback.getApplicationId() == applicationId
+                        && predicate.test(callback))
+                .findFirst();
+
+        messageCallback.ifPresent(callback -> {
+            callbacksQueue.remove(callback);
+            callback.complete(packetMessage);
+        });
+    }
 }

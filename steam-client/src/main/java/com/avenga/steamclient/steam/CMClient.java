@@ -207,14 +207,7 @@ public class CMClient {
             return null;
         }
 
-        BinaryReader reader = new BinaryReader(new ByteArrayInputStream(data));
-
-        int rawEMsg = 0;
-        try {
-            rawEMsg = reader.readInt();
-        } catch (IOException e) {
-            LOGGER.debug("Exception while getting EMsg code", e);
-        }
+        int rawEMsg = MessageUtil.getRawEMsg(data);
         EMsg eMsg = MessageUtil.getMessage(rawEMsg);
 
         if (eMsg == EMsg.ChannelEncryptRequest || eMsg == EMsg.ChannelEncryptResponse || eMsg == EMsg.ChannelEncryptResult) {

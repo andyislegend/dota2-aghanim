@@ -147,32 +147,30 @@ public class Message<BodyType extends SteamSerializableMessage> extends BaseMess
 
     @Override
     public byte[] serialize() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(0);
-        try {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(0)) {
             getHeader().serialize(baos);
             body.serialize(baos);
             baos.write(payload.toByteArray());
+            return baos.toByteArray();
         } catch (IOException e) {
             LOGGER.debug(e.getMessage(), e);
+            return new byte[]{};
         }
-        return baos.toByteArray();
     }
 
     @Override
     public void deserialize(byte[] data) {
         Objects.requireNonNull(data, "data wasn't provided");
 
-        MemoryStream ms = new MemoryStream(data);
-
-        try {
+        try (MemoryStream ms = new MemoryStream(data)) {
             getHeader().deserialize(ms);
             body.deserialize(ms);
+
+            payload.write(data, (int) ms.getPosition(), ms.available());
+            payload.seek(0, SeekOrigin.BEGIN);
         } catch (IOException e) {
             LOGGER.debug(e.getMessage(), e);
         }
-
-        payload.write(data, (int) ms.getPosition(), ms.available());
-        payload.seek(0, SeekOrigin.BEGIN);
     }
 
     public BodyType getBody() {
