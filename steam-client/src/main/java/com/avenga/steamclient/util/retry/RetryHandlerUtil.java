@@ -24,8 +24,6 @@ public class RetryHandlerUtil {
                 LOGGER.debug("Consumer messageCallback handler retry count {} with error: {}", count, e.getMessage());
                 count++;
                 errorMessage = e.getMessage();
-            } catch (CallbackCompletionException e) {
-                throw e;
             }
         }
         client.removeCallbackFromQueue(messageCallback);
