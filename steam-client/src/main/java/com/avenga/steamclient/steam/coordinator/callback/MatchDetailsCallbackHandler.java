@@ -7,12 +7,13 @@ import com.avenga.steamclient.mapper.DotaMatchDetailsMapper;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.model.steam.gamecoordinator.dota.match.DotaMatchDetails;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsResponse;
+import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
 
 public class MatchDetailsCallbackHandler extends AbstractCallbackHandler<GCPacketMessage> {
 
-    public static DotaMatchDetails handle(SteamMessageCallback<GCPacketMessage> callback, long timeout) throws CallbackTimeoutException {
-        GCPacketMessage gcPacketMessage = waitAndGetPacketMessage(callback, timeout, "MatchDetails");
+    public static DotaMatchDetails handle(SteamMessageCallback<GCPacketMessage> callback, long timeout, SteamClient client) throws CallbackTimeoutException {
+        GCPacketMessage gcPacketMessage = waitAndGetMessageOrRemoveAfterTimeout(callback, timeout, "MatchDetails", client);
 
         return getMessage(gcPacketMessage);
     }

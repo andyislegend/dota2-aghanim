@@ -55,7 +55,7 @@ public class SteamUser {
     public UserLogOnResponse logOn(LogOnDetails logOnDetails, long timeout) throws CallbackTimeoutException {
         var userLogOnCallback = this.client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
         sendLogonRequest(logOnDetails);
-        return UserLogOnCallbackHandler.handle(userLogOnCallback, timeout);
+        return UserLogOnCallbackHandler.handle(userLogOnCallback, timeout, client);
     }
 
     /**

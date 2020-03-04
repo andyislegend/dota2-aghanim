@@ -68,7 +68,7 @@ public class DotaClient extends AbstractDotaClient {
     public DotaMatchDetails getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
         var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
         sendMatchDetailsRequest(matchId);
-        return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout);
+        return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout, getClient());
     }
 
     /**
@@ -101,7 +101,7 @@ public class DotaClient extends AbstractDotaClient {
     public DotaProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
         var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
         sendProfileCardRequest(accountId);
-        return ProfileCardCallbackHandler.handle(profileCardCallback, timeout);
+        return ProfileCardCallbackHandler.handle(profileCardCallback, timeout, getClient());
     }
 
     private void sendMatchDetailsRequest(long matchId) {

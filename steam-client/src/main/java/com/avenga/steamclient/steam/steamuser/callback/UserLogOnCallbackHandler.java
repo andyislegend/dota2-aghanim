@@ -8,6 +8,7 @@ import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLogOnResponse;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogonResponse;
+import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
 import com.avenga.steamclient.steam.steamuser.UserLogOnResponse;
 
@@ -15,8 +16,8 @@ public class UserLogOnCallbackHandler extends AbstractCallbackHandler<PacketMess
 
     public static final int CALLBACK_MESSAGE_CODE = EMsg.ClientLogOnResponse.code();
 
-    public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> callback, long timeout) throws CallbackTimeoutException {
-        PacketMessage packetMessage = waitAndGetPacketMessage(callback, timeout, "UserLogOn");
+    public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> callback, long timeout, SteamClient client) throws CallbackTimeoutException {
+        PacketMessage packetMessage = waitAndGetMessageOrRemoveAfterTimeout(callback, timeout, "UserLogOn", client);
 
         return getMessage(packetMessage);
     }
