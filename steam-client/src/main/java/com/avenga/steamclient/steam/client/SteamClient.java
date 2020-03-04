@@ -230,11 +230,10 @@ public class SteamClient extends CMClient {
     private void handleServiceMethodBody(PacketMessage packetMessage, ClientMessageProtobuf body) {
         if (body.getBody() instanceof SteammessagesPlayerSteamclient.CPlayer_GetLastPlayedTimes_Response.Builder) {
             var playedTimesResponse = (SteammessagesPlayerSteamclient.CPlayer_GetLastPlayedTimes_Response) body.getBody().build();
-            List<String> gameIds = playedTimesResponse.getGamesList().stream()
+            var gameIds = playedTimesResponse.getGamesList().stream()
                     .map(game -> String.valueOf(game.getAppid()))
                     .collect(Collectors.toList());
-            Predicate<CompletableCallback> predicate = completableCallback -> Objects.nonNull(completableCallback.getProperties())
-                    && gameIds.contains(completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
+            var predicate = getServiceMethodBodyPredicate(gameIds);
 
             LOGGER.debug("Processing PlayedGame with matches: {}", gameIds);
             findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
@@ -245,12 +244,9 @@ public class SteamClient extends CMClient {
         ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
                 CMsgClientPlayingSessionState.class, packetMessage);
         var playingSession = playingSessionBuilder.getBody().build();
+        var predicate = getGamePlayedPredicate(playingSession);
+
         LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
-
-        Predicate<CompletableCallback> predicate = completableCallback -> Objects.nonNull(completableCallback.getProperties())
-                && String.valueOf(playingSession.getPlayingApp()).equals(
-                completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
-
         findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
     }
 
@@ -266,5 +262,16 @@ public class SteamClient extends CMClient {
             callbacksQueue.remove(callback);
             callback.complete(packetMessage);
         });
+    }
+
+    private Predicate<CompletableCallback> getGamePlayedPredicate(CMsgClientPlayingSessionState playingSession) {
+        return completableCallback -> Objects.nonNull(completableCallback.getProperties())
+                && String.valueOf(playingSession.getPlayingApp()).equals(
+                completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
+    }
+
+    private Predicate<CompletableCallback> getServiceMethodBodyPredicate(List<String> gameIds) {
+        return completableCallback -> Objects.nonNull(completableCallback.getProperties())
+                && gameIds.contains(completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
     }
 }
