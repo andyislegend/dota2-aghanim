@@ -13,19 +13,22 @@ import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.GamePlayedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
 import com.avenga.steamclient.steam.coordinator.callback.GCSessionCallbackHandler;
+import com.avenga.steamclient.util.retry.RetryHandlerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
-import static com.avenga.steamclient.enums.EMsg.*;
+import static com.avenga.steamclient.enums.EMsg.ClientGamesPlayedWithDataBlob;
+import static com.avenga.steamclient.enums.EMsg.ServiceMethod;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientHello;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientWelcome;
 
 public abstract class AbstractDotaClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDotaClient.class);
+    private static final int RETRY_COUNT = 3;
 
     protected final AbstractGameCoordinator gameCoordinator;
 
@@ -48,22 +51,25 @@ public abstract class AbstractDotaClient {
     }
 
     protected void setClientPlayedGame() throws CallbackTimeoutException {
-        var gamePlayedCallback = getClient().addCallbackToQueue(ClientConcurrentSessionsBase.code(), getPLayedGameProperties());
+        var gamePlayedCallback = getClient().addCallbackToQueue(ServiceMethod.code(), getPLayedGameProperties());
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayedWithDataBlob);
         var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
                 .setGameId(applicationId)
                 .build();
         gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
         getClient().send(gamePlayedMessage);
-        GamePlayedClientCallbackHandler.handle(gamePlayedCallback, callbackWaitTimeout);
+        GamePlayedClientCallbackHandler.handle(gamePlayedCallback, callbackWaitTimeout, getClient());
     }
 
     protected void initGCSession() throws CallbackTimeoutException {
         var gcSessionCallback = getClient().addGCCallbackToQueue(k_EMsgGCClientWelcome.getNumber(), applicationId);
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(ESourceEngine.k_ESE_Source2);
-        gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
-        GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout);
+
+        RetryHandlerUtil.getOrRetry(() -> {
+            gameCoordinator.send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
+            return GCSessionCallbackHandler.handle(gcSessionCallback, callbackWaitTimeout);
+        }, gcSessionCallback, RETRY_COUNT, getClient());
     }
 
     private Properties getPLayedGameProperties() {

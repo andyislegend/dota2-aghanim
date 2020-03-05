@@ -7,12 +7,13 @@ import com.avenga.steamclient.mapper.DotaAccountProfileCardMapper;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.model.steam.gamecoordinator.dota.account.DotaProfileCard;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon.CMsgDOTAProfileCard;
+import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
 
 public class ProfileCardCallbackHandler extends AbstractCallbackHandler<GCPacketMessage> {
 
-    public static DotaProfileCard handle(SteamMessageCallback<GCPacketMessage> callback, long timeout) throws CallbackTimeoutException {
-        GCPacketMessage gcPacketMessage = waitAndGetPacketMessage(callback, timeout, "ProfileCard");
+    public static DotaProfileCard handle(SteamMessageCallback<GCPacketMessage> callback, long timeout, SteamClient client) throws CallbackTimeoutException {
+        GCPacketMessage gcPacketMessage = waitAndGetMessageOrRemoveAfterTimeout(callback, timeout, "ProfileCard", client);
 
         return getMessage(gcPacketMessage);
     }

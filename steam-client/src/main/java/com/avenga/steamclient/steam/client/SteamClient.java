@@ -13,14 +13,17 @@ import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.model.steam.gamecoordinator.GCMessage;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgClientPlayingSessionState;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgGCClient;
+import com.avenga.steamclient.protobufs.steamclient.SteammessagesPlayerSteamclient;
 import com.avenga.steamclient.steam.CMClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
+import com.avenga.steamclient.util.MessageUtil;
 import com.avenga.steamclient.util.SteamEnumUtils;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -29,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.avenga.steamclient.constant.ServiceMethodConstant.PLAYER_LAST_PLAYED_TIMES;
 
@@ -115,6 +119,15 @@ public class SteamClient extends CMClient {
     }
 
     /**
+     * Removes registered callback from queue.
+     *
+     * @param messageCallback Callback registered in queue.
+     */
+    public void removeCallbackFromQueue(SteamMessageCallback messageCallback) {
+        callbacksQueue.remove(messageCallback);
+    }
+
+    /**
      * Establish connection with Steam Network server.
      *
      * @return CompletableFuture Callback which will be complete when {@link SteamClient} will be connected to server.
@@ -134,7 +147,7 @@ public class SteamClient extends CMClient {
     public void connect(long timeout) throws CallbackTimeoutException {
         var callback = addCallbackToQueue(ConnectedClientCallbackHandler.CALLBACK_MESSAGE_CODE);
         super.connect();
-        ConnectedClientCallbackHandler.handle(callback, timeout);
+        ConnectedClientCallbackHandler.handle(callback, timeout, this);
     }
 
     /**
@@ -170,6 +183,8 @@ public class SteamClient extends CMClient {
             findAndCompleteCallback(gcMessage.geteMsg(), gcMessage.getApplicationID(), gcMessage.getMessage());
         } else if (packetMessage.getMessageType() == EMsg.ClientPlayingSessionState || packetMessage.getMessageType() == EMsg.ClientConcurrentSessionsBase) {
             handleGamePlayingSession(packetMessage);
+        } else if (packetMessage.getMessageType() == EMsg.ServiceMethod) {
+            MessageUtil.readServiceMethodBody(packetMessage).ifPresent(body -> handleServiceMethodBody(packetMessage, body));
         } else {
             findAndCompleteCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage);
         }
@@ -212,16 +227,26 @@ public class SteamClient extends CMClient {
         return new GCMessage(gcClientMessage.getBody());
     }
 
+    private void handleServiceMethodBody(PacketMessage packetMessage, ClientMessageProtobuf body) {
+        if (body.getBody() instanceof SteammessagesPlayerSteamclient.CPlayer_GetLastPlayedTimes_Response.Builder) {
+            var playedTimesResponse = (SteammessagesPlayerSteamclient.CPlayer_GetLastPlayedTimes_Response) body.getBody().build();
+            var gameIds = playedTimesResponse.getGamesList().stream()
+                    .map(game -> String.valueOf(game.getAppid()))
+                    .collect(Collectors.toList());
+            var predicate = getServiceMethodBodyPredicate(gameIds);
+
+            LOGGER.debug("Processing PlayedGame with matches: {}", gameIds);
+            findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
+        }
+    }
+
     private void handleGamePlayingSession(PacketMessage packetMessage) {
         ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
                 CMsgClientPlayingSessionState.class, packetMessage);
         var playingSession = playingSessionBuilder.getBody().build();
+        var predicate = getGamePlayedPredicate(playingSession);
+
         LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
-
-        Predicate<CompletableCallback> predicate = completableCallback -> Objects.nonNull(completableCallback.getProperties())
-                && String.valueOf(playingSession.getPlayingApp()).equals(
-                completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
-
         findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
     }
 
@@ -237,5 +262,16 @@ public class SteamClient extends CMClient {
             callbacksQueue.remove(callback);
             callback.complete(packetMessage);
         });
+    }
+
+    private Predicate<CompletableCallback> getGamePlayedPredicate(CMsgClientPlayingSessionState playingSession) {
+        return completableCallback -> Objects.nonNull(completableCallback.getProperties())
+                && String.valueOf(playingSession.getPlayingApp()).equals(
+                completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
+    }
+
+    private Predicate<CompletableCallback> getServiceMethodBodyPredicate(List<String> gameIds) {
+        return completableCallback -> Objects.nonNull(completableCallback.getProperties())
+                && gameIds.contains(completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
     }
 }

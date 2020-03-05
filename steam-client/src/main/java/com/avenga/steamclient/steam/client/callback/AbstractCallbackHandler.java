@@ -5,6 +5,7 @@ import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.steam.client.SteamClient;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -16,24 +17,48 @@ public abstract class AbstractCallbackHandler<T> {
 
     /**
      * Waits for callback completion and return packet message received from the Steam Network servers.
-     * Packet message will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.
+     * Packet message will be returned if callback will be finished in time, otherwise callback after specified timeout
+     * will be removed from queue. We don't need to cancel {@link CompletableFuture} callback as we don't
+     * execute any logic in it.
      *
-     * @param callback Registered callback in {@link SteamClient} callback queue.
-     * @param timeout Time during which handler will wait for callback.
+     * @param callback    Registered callback in {@link SteamClient} callback queue.
+     * @param timeout     Time during which handler will wait for callback.
      * @param handlerName Name of the handler which handle current callback.
-     * @param <T> Packet message type.
-     *
-     * @throws CallbackTimeoutException if the wait timed out
+     * @param <T>         Packet message type.
+     * @param client      Stean synchronous client.
      * @return Packet message received from the the Steam Network servers.
+     * @throws CallbackTimeoutException if the wait timed out.
+     */
+    protected static <T> T waitAndGetMessageOrRemoveAfterTimeout(SteamMessageCallback<T> callback, long timeout,
+                                                                 String handlerName, SteamClient client) throws CallbackTimeoutException {
+        try {
+            return callback.getCallback().get(timeout, TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException e) {
+            client.removeCallbackFromQueue(callback);
+            throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
+        } catch (final InterruptedException | ExecutionException e) {
+            throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Waits for callback completion and return packet message received from the Steam Network servers.
+     * Packet message will be returned if callback will be finished in time, otherwise exception will be thrown.
+     *
+     * @param callback    Registered callback in {@link SteamClient} callback queue.
+     * @param timeout     Time during which handler will wait for callback.
+     * @param handlerName Name of the handler which handle current callback.
+     * @param <T>         Packet message type.
+     * @return Packet message received from the the Steam Network servers.
+     * @throws CallbackTimeoutException if the wait timed out.
      */
     protected static <T> T waitAndGetPacketMessage(SteamMessageCallback<T> callback, long timeout, String handlerName) throws CallbackTimeoutException {
         try {
             return callback.getCallback().get(timeout, TimeUnit.MILLISECONDS);
         } catch (final TimeoutException e) {
-            callback.getCallback().cancel(true);
             throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
         } catch (final InterruptedException | ExecutionException e) {
-            throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e.getMessage()) , e);
+            throw new CallbackCompletionException(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e.getMessage()), e);
         }
     }
 }
