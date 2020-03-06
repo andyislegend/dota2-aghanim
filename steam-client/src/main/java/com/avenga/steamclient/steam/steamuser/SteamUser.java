@@ -7,9 +7,9 @@ import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLogon;
 import com.avenga.steamclient.model.SteamID;
+import com.avenga.steamclient.model.steam.ClientHandler;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogOff;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogon;
-import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
 import com.avenga.steamclient.util.HardwareUtils;
 import com.avenga.steamclient.util.NetworkUtils;
@@ -19,13 +19,7 @@ import com.google.protobuf.ByteString;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class SteamUser {
-
-    private final SteamClient client;
-
-    public SteamUser(SteamClient client) {
-        this.client = client;
-    }
+public class SteamUser extends ClientHandler {
 
     /**
      * Logs the client into the Steam3 network.
