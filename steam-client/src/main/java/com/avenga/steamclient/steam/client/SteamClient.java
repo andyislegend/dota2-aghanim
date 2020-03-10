@@ -416,21 +416,12 @@ public class SteamClient extends CMClient {
         connectingInProgress = true;
         while (connectingInProgress) {
             try {
-                this.disconnectAndWait();
                 this.connect(DEFAULT_RECONECT_TIMEOUT);
             } catch (CallbackTimeoutException e) {
                 waitBeforeNextTry();
                 continue;
             }
             connectingInProgress = false;
-        }
-    }
-
-    private void disconnectAndWait() throws CallbackTimeoutException {
-        if (this.isConnected()) {
-            var disconnectCallback = addCallbackToQueue(DisconnectedClientCallbackHandler.CALLBACK_MESSAGE_CODE);
-            this.disconnect();
-            DisconnectedClientCallbackHandler.handle(disconnectCallback, DEFAULT_RECONECT_TIMEOUT, this);
         }
     }
 
