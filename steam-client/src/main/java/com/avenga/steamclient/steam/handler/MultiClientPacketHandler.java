@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import static com.avenga.steamclient.steam.CMClient.getPacketMsg;
+import static com.avenga.steamclient.steam.CMClient.getPacketMessage;
 
 public class MultiClientPacketHandler implements ClientPacketHandler {
 
@@ -58,7 +58,7 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
                 int subSize = binaryReader.readInt();
                 byte[] subData = binaryReader.readBytes(subSize);
 
-                PacketMessage subPacketMessage = getPacketMsg(subData);
+                PacketMessage subPacketMessage = getPacketMessage(subData);
                 packetMessages.add(subPacketMessage);
             }
         } catch (IOException e) {

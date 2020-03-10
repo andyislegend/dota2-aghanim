@@ -15,17 +15,18 @@ import com.avenga.steamclient.util.MessageUtil;
 import com.avenga.steamclient.util.ScheduledFunction;
 import com.avenga.steamclient.util.network.DebugNetworkListener;
 import com.avenga.steamclient.util.network.PacketDebugNetworkListener;
-import com.avenga.steamclient.util.stream.BinaryReader;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.avenga.steamclient.enums.EMsg.*;
 
@@ -67,6 +68,8 @@ public class CMClient {
 
     private final Map<EMsg, ClientPacketHandler> packetHandlers;
 
+    private CompletableFuture<Boolean> disconnectCallback;
+
     public CMClient(SteamConfiguration configuration) {
         Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
@@ -100,7 +103,7 @@ public class CMClient {
     public void connect(ServerRecord cmServer) {
         synchronized (connectionLock) {
             try {
-                disconnect();
+                initDisconnectAndWait();
 
                 assert connection != null;
 
@@ -201,7 +204,7 @@ public class CMClient {
         }
     }
 
-    public static PacketMessage getPacketMsg(byte[] data) {
+    public static PacketMessage getPacketMessage(byte[] data) {
         if (data.length < 4) {
             LOGGER.debug("PacketMsg too small to contain a message, was only {0} bytes. Message: 0x{1}");
             return null;
@@ -287,7 +290,7 @@ public class CMClient {
     }
 
     private final EventHandler<NetMsgEventArgs> netMsgReceived = (sender, netMsgEventArgs) ->
-            onClientMsgReceived(getPacketMsg(netMsgEventArgs.getData()));
+            onClientMsgReceived(getPacketMessage(netMsgEventArgs.getData()));
 
     private final EventHandler<EventArgs> connected = (sender, eventArgs) -> {
         getServers().tryMark(connection.getCurrentEndPoint(), connection.getProtocolTypes(), ServerQuality.GOOD);
@@ -314,5 +317,25 @@ public class CMClient {
         heartBeatFunction.stop();
 
         onClientDisconnected(disconnectedEventArgs.isUserInitiated() || expectDisconnection);
+
+        if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
+            LOGGER.debug("Is disconnect callback completed: {}", disconnectCallback.complete(true));
+        }
     };
+
+    private void initDisconnectAndWait() {
+        if (Objects.nonNull(connection)) {
+            disconnectCallback = new CompletableFuture<>();
+            disconnect();
+            try {
+                while (!disconnectCallback.isDone()) {
+                    TimeUnit.MILLISECONDS.sleep(300);
+                }
+                disconnectCallback.get();
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.debug("Disconnect callback was interupted", e);
+            }
+            disconnectCallback = null;
+        }
+    }
 }
