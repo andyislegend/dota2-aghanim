@@ -2,35 +2,45 @@ package com.avenga.steamclient.steam.client;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.base.GCPacketMessage;
+import com.avenga.steamclient.base.Message;
 import com.avenga.steamclient.base.PacketMessage;
 import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EMsg;
+import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.exception.CallbackQueueException;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
+import com.avenga.steamclient.generated.MsgClientLoggedOff;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
+import com.avenga.steamclient.model.steam.ClientHandler;
 import com.avenga.steamclient.model.steam.CompletableCallback;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.model.steam.gamecoordinator.GCMessage;
+import com.avenga.steamclient.model.steam.user.LogOnDetailsRecord;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgClientPlayingSessionState;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgGCClient;
+import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLoggedOff;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesPlayerSteamclient;
+import com.avenga.steamclient.provider.UserCredentialsProvider;
 import com.avenga.steamclient.steam.CMClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
+import com.avenga.steamclient.steam.client.callback.DisconnectedClientCallbackHandler;
 import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
+import com.avenga.steamclient.steam.steamuser.SteamUser;
+import com.avenga.steamclient.steam.steamuser.UserLogOnResponse;
 import com.avenga.steamclient.util.MessageUtil;
 import com.avenga.steamclient.util.SteamEnumUtils;
 import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -41,11 +51,30 @@ public class SteamClient extends CMClient {
 
     private static final int DEFAULT_SEQUENCE_VALUE = 0;
     private static final int CLIENT_APPLICATION_ID = 0;
+    private static final long DEFAULT_RECONECT_TIMEOUT = 15000;
 
     private final BlockingQueue<CompletableCallback> callbacksQueue = new LinkedBlockingQueue<>();
 
     @Getter
+    @Setter
+    /**
+     * List of the user details which will be used for connection rotation, in case user can't connect to Steam Network
+     * or was logged off from Steam.
+     */
+    private UserCredentialsProvider credentialsProvider;
+
+    @Getter
+    /**
+     * Sequence generator for queue callbacks.
+     */
     private final AtomicInteger queueSequence = new AtomicInteger(DEFAULT_SEQUENCE_VALUE);
+
+    private Map<Class<? extends ClientHandler>, ClientHandler> handlers = new HashMap<>();
+    private Map<EMsg, Consumer<PacketMessage>> defaultPacketHandlers;
+
+    private LogOnDetailsRecord currentLoggedUser;
+    private boolean reconnectOnUserInitiated;
+    private boolean connectingInProgress;
 
     /**
      * Initializes a new instance of the {@link SteamClient} class with the default configuration.
@@ -62,6 +91,16 @@ public class SteamClient extends CMClient {
     public SteamClient(SteamConfiguration configuration) {
         super(configuration);
         queueSequence.getAndIncrement();
+
+        defaultPacketHandlers = Map.of(
+                EMsg.ClientFromGC, this::handleClientFromGC,
+                EMsg.ClientPlayingSessionState, this::handleGamePlayingSession,
+                EMsg.ClientConcurrentSessionsBase, this::handleGamePlayingSession,
+                EMsg.ServiceMethod, this::handleServiceMethod,
+                EMsg.ClientLoggedOff, this::handleClientLogOff
+        );
+
+        addHandler(new SteamUser());
     }
 
     /**
@@ -139,6 +178,21 @@ public class SteamClient extends CMClient {
     }
 
     /**
+     * Establish connection with Steam Network server and login to Steam Server using credentials
+     * prvided by {@link UserCredentialsProvider}.
+     *
+     * @return Log on response of the logged user to Steam Network.
+     * @throws CallbackTimeoutException if the wait timed out
+     */
+    public UserLogOnResponse connectAndLogin() {
+        Objects.requireNonNull(credentialsProvider, "User credential provider wasn't initialized");
+
+        var userLogOnResponse = loginAndGetResponse();
+        credentialsProvider.startResetBannedCredentialJob();
+        return userLogOnResponse;
+    }
+
+    /**
      * Establish connection with Steam Network server for specified time.
      *
      * @param timeout Time during which handler will wait for callback.
@@ -175,20 +229,49 @@ public class SteamClient extends CMClient {
             return false;
         }
 
-        if (packetMessage.getMessageType() == EMsg.ClientFromGC) {
-            var gcMessage = getGCPacketMessage(packetMessage);
-            LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {})", SteamEnumUtils.getEnumName(
-                    gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(), gcMessage.isProto());
+        var packetHandler = defaultPacketHandlers.get(packetMessage.getMessageType());
 
-            findAndCompleteCallback(gcMessage.geteMsg(), gcMessage.getApplicationID(), gcMessage.getMessage());
-        } else if (packetMessage.getMessageType() == EMsg.ClientPlayingSessionState || packetMessage.getMessageType() == EMsg.ClientConcurrentSessionsBase) {
-            handleGamePlayingSession(packetMessage);
-        } else if (packetMessage.getMessageType() == EMsg.ServiceMethod) {
-            MessageUtil.readServiceMethodBody(packetMessage).ifPresent(body -> handleServiceMethodBody(packetMessage, body));
+        if (Objects.nonNull(packetHandler)) {
+            packetHandler.accept(packetMessage);
         } else {
             findAndCompleteCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage);
         }
         return true;
+    }
+
+    /**
+     * Adds a new handler to the internal list of message handlers.
+     *
+     * @param handler The handler to add.
+     */
+    public void addHandler(ClientHandler handler) {
+        if (handlers.containsKey(handler.getClass())) {
+            throw new IllegalArgumentException("A handler of type " + handler.getClass() + " is already registered.");
+        }
+
+        handler.setup(this);
+        handlers.put(handler.getClass(), handler);
+    }
+
+    /**
+     * Removes a registered handler by name.
+     *
+     * @param handler The handler name to remove.
+     */
+    public void removeHandler(Class<? extends ClientHandler> handler) {
+        handlers.remove(handler);
+    }
+
+    /**
+     * Returns a registered handler.
+     *
+     * @param type The type of the handler to cast to. Must derive from ClientGCMessageHandler.
+     * @param <T>  The type of the handler to cast to. Must derive from ClientGCMessageHandler.
+     * @return A registered handler on success, or null if the handler could not be found.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends ClientHandler> T getHandler(Class<T> type) {
+        return (T) handlers.get(type);
     }
 
     /**
@@ -208,7 +291,10 @@ public class SteamClient extends CMClient {
     @Override
     protected void onClientDisconnected(boolean userInitiated) {
         super.onClientDisconnected(userInitiated);
+        LOGGER.debug("Client was disconnected. Disconnect initiated by user: {}. Reconnect initiated by user : {}",
+                userInitiated, reconnectOnUserInitiated);
         findAndCompleteCallback(Constant.DISCONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID, null);
+        checkAndReconnect(userInitiated);
     }
 
     private <T> void findAndCompleteCallback(int messageCode, int applicationId, T packetMessage) {
@@ -220,6 +306,43 @@ public class SteamClient extends CMClient {
             callbacksQueue.remove(callback);
             callback.complete(packetMessage);
         });
+    }
+
+    private void handleClientFromGC(PacketMessage packetMessage) {
+        var gcMessage = getGCPacketMessage(packetMessage);
+        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {})", SteamEnumUtils.getEnumName(
+                gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(), gcMessage.isProto());
+
+        findAndCompleteCallback(gcMessage.geteMsg(), gcMessage.getApplicationID(), gcMessage.getMessage());
+    }
+
+    private void handleGamePlayingSession(PacketMessage packetMessage) {
+        ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
+                CMsgClientPlayingSessionState.class, packetMessage);
+        var playingSession = playingSessionBuilder.getBody().build();
+        var predicate = getGamePlayedPredicate(playingSession);
+
+        LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
+        findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
+    }
+
+    private void handleServiceMethod(PacketMessage packetMessage) {
+        MessageUtil.readServiceMethodBody(packetMessage).ifPresent(body -> handleServiceMethodBody(packetMessage, body));
+    }
+
+    private void handleClientLogOff(PacketMessage packetMessage) {
+        var lastLogOnResult = EResult.Invalid;
+        if (packetMessage.isProto()) {
+            ClientMessageProtobuf<CMsgClientLoggedOff.Builder> loggedOff = new ClientMessageProtobuf<>(CMsgClientLoggedOff.class, packetMessage);
+            lastLogOnResult = EResult.from(loggedOff.getBody().getEresult());
+        } else {
+            Message<MsgClientLoggedOff> loggedOff = new Message<>(MsgClientLoggedOff.class, packetMessage);
+            lastLogOnResult = loggedOff.getBody().getResult();
+        }
+
+        LOGGER.debug("Client was logged off due to: {}", lastLogOnResult);
+        reconnectOnUserInitiated = true;
+        this.disconnect();
     }
 
     private GCMessage getGCPacketMessage(PacketMessage packetMessage) {
@@ -238,16 +361,6 @@ public class SteamClient extends CMClient {
             LOGGER.debug("Processing PlayedGame with matches: {}", gameIds);
             findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
         }
-    }
-
-    private void handleGamePlayingSession(PacketMessage packetMessage) {
-        ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
-                CMsgClientPlayingSessionState.class, packetMessage);
-        var playingSession = playingSessionBuilder.getBody().build();
-        var predicate = getGamePlayedPredicate(playingSession);
-
-        LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
-        findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
     }
 
     private <T> void findAndCompleteServiceMethodCallback(int messageCode, int applicationId, T packetMessage,
@@ -273,5 +386,96 @@ public class SteamClient extends CMClient {
     private Predicate<CompletableCallback> getServiceMethodBodyPredicate(List<String> gameIds) {
         return completableCallback -> Objects.nonNull(completableCallback.getProperties())
                 && gameIds.contains(completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
+    }
+
+    private UserLogOnResponse loginAndGetResponse() {
+        var steamUser = getHandler(SteamUser.class);
+        UserLogOnResponse logOnResponse = null;
+
+        do {
+            openConnection();
+            currentLoggedUser = credentialsProvider.getNext();
+            try {
+                logOnResponse = steamUser.logOn(currentLoggedUser.getLogOnDetails(), DEFAULT_RECONECT_TIMEOUT);
+            } catch (CallbackTimeoutException e) {
+                logOnResponse = null;
+                currentLoggedUser.blockFor(LogOnDetailsRecord.RECONNECT_TIMEOUT);
+            }
+
+            if (Objects.nonNull(logOnResponse) && logOnResponse.getResult() != EResult.OK) {
+                checkAndBlockCredentials(logOnResponse.getResult());
+            }
+            credentialsProvider.returnKey(currentLoggedUser);
+        } while (Objects.isNull(logOnResponse) || logOnResponse.getResult() != EResult.OK);
+
+        LOGGER.debug("Successfully loged on with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
+        return logOnResponse;
+    }
+
+    private void openConnection() {
+        connectingInProgress = true;
+        while (connectingInProgress) {
+            try {
+                this.disconnectAndWait();
+                this.connect(DEFAULT_RECONECT_TIMEOUT);
+            } catch (CallbackTimeoutException e) {
+                waitBeforeNextTry();
+                continue;
+            }
+            connectingInProgress = false;
+        }
+    }
+
+    private void disconnectAndWait() throws CallbackTimeoutException {
+        if (this.isConnected()) {
+            var disconnectCallback = addCallbackToQueue(DisconnectedClientCallbackHandler.CALLBACK_MESSAGE_CODE);
+            this.disconnect();
+            DisconnectedClientCallbackHandler.handle(disconnectCallback, DEFAULT_RECONECT_TIMEOUT, this);
+        }
+    }
+
+    private void checkAndReconnect(boolean userInitiated) {
+        if (Objects.nonNull(credentialsProvider) && !connectingInProgress) {
+            if (reconnectOnUserInitiated || !userInitiated) {
+                reconnectOnUserInitiated = false;
+                connectAndLogin();
+            } else {
+                credentialsProvider.stopResetBannedCredentialJob();
+            }
+        }
+    }
+
+    private void checkAndBlockCredentials(EResult logOnResult) {
+        switch (logOnResult) {
+            case AccountDisabled:
+            case InvalidPassword:
+                currentLoggedUser.blockPermanently();
+                LOGGER.warn("User {} has invalid password or account was disabled.",
+                        currentLoggedUser.getLogOnDetails().getUsername());
+                break;
+            case NoConnection:
+            case ServiceUnavailable:
+            case Timeout:
+            case TryAnotherCM:
+                currentLoggedUser.blockFor(LogOnDetailsRecord.RECONNECT_TIMEOUT);
+                LOGGER.debug("User {} was temporary blocked due to Steam connection status.",
+                        currentLoggedUser.getLogOnDetails().getUsername());
+                break;
+            case RateLimitExceeded:
+                currentLoggedUser.overLogOnLimitBlock();
+                LOGGER.debug("User {} was blocked log on due to rate limit.",
+                        currentLoggedUser.getLogOnDetails().getUsername());
+                break;
+            default:
+                LOGGER.debug("LogOn response result: {}", logOnResult);
+        }
+    }
+
+    private void waitBeforeNextTry() {
+        try {
+            TimeUnit.MILLISECONDS.sleep(DEFAULT_RECONECT_TIMEOUT);
+        } catch (InterruptedException ex) {
+            LOGGER.debug("Exception occuers during waiting connection retry: {}", ex.getMessage());
+        }
     }
 }
