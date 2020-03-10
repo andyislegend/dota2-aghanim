@@ -319,7 +319,8 @@ public class CMClient {
         onClientDisconnected(disconnectedEventArgs.isUserInitiated() || expectDisconnection);
 
         if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
-            LOGGER.debug("Is disconnect callback completed: {}", disconnectCallback.complete(true));
+            var completeResult = disconnectCallback.complete(true);
+            LOGGER.debug("Is disconnect callback completed: {}", completeResult);
         }
     };
 
