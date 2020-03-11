@@ -126,7 +126,7 @@ public static void main(String[] args) throws CallbackTimeoutException {
         // We need to provide list of the user credentials, which automatic reconnect logic will use to rotate connection session.
         steamClient.setCredentialsProvider(new UserCredentialsProvider(List.of(logOnDetails)));
         
-        // We can register additional actions, which reconnect logic will execute after successful establishing connection. 
+        // We can register additional actions, which reconnect logic will execute after successfully established connection.
         steamClient.setOnAutoReconnect((client) -> {
             var gameServer = client.getHandler(SteamGameServer.class);
             var dotaClient = client.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
@@ -139,7 +139,7 @@ public static void main(String[] args) throws CallbackTimeoutException {
             }
         });
         
-        // We establish connection with Steam Network and login user credentials registered in UserCredentialsProvider.
+        // Now we can establish connection and login to Steam Network using user credentials registered in UserCredentialsProvider.
         steamClient.connectAndLogin();
 
         // now You can query for data using Steam Network API.
