@@ -106,7 +106,49 @@ Developer should consider next Steam Network and Game Coordinator behavior:
 > Sometimes Steam server could ignore request and won't respond on client request. When developer want to use CompletableFuture from regular methods of the synchronous client, better always to keep this in mind.
 
 Before making calls to Steam Network and Game Coordinator services you need to open connection and login to Steam server.
-  ###### LogIn to Steam server using synchronous Steam client and regular methods:
+Synchronous client provide **manual** and **automatic** control on connection logic:
+
+##### Automatic connection logic
+User can use automated logic provided by Steam client, which will automatically: 
+1) Re-established connection in case it was disconnected by Steam server.
+2) Get next user credentials registered in `UserCredentialsProvider` and try to login to Steam Network.
+3) Execute additional actions described in `onAutoReconnect` callback.
+
+ ```java
+public static void main(String[] args) throws CallbackTimeoutException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+        var timeoutInMillis = 15000;
+        var steamClient = new SteamClient();
+
+        LogOnDetails logOnDetails = new LogOnDetails();
+        logOnDetails.setUsername(args[0]);
+        logOnDetails.setPassword(args[1]);
+        // We need to provide list of the user credentials, which automatic reconnect logic will use to rotate connection session.
+        steamClient.setCredentialsProvider(new UserCredentialsProvider(List.of(logOnDetails)));
+        
+        // We can register additional actions, which reconnect logic will execute after successful establishing connection. 
+        steamClient.setOnAutoReconnect((client) -> {
+            var gameServer = client.getHandler(SteamGameServer.class);
+            var dotaClient = client.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+            try {
+                gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+                dotaClient.sendClientHello(timeoutInMillis);
+            } catch (CallbackTimeoutException e) {
+                client.setReconnectOnUserInitiated(true);
+                client.disconnect();
+            }
+        });
+        
+        // We establish connection with Steam Network and login user credentials registered in UserCredentialsProvider.
+        steamClient.connectAndLogin();
+
+        // now You can query for data using Steam Network API.
+    }
+}
+ ```
+
+##### Manual connection logic
+###### LogIn to Steam server using synchronous Steam client and regular methods:
  ```java
 public static void main(String[] args) throws CallbackTimeoutException {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {

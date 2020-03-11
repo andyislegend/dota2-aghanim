@@ -69,11 +69,27 @@ public class SteamClient extends CMClient {
      */
     private final AtomicInteger queueSequence = new AtomicInteger(DEFAULT_SEQUENCE_VALUE);
 
+    @Setter
+    @Getter
+    /**
+     * Auto reconnect callback, which will be called after establishing connection with Steam Network and
+     * sucessful login using credentials from {@link UserCredentialsProvider}. It will be used if user will
+     * open connection using {@link #connectAndLogin()} method.
+     */
+    private Consumer<SteamClient> onAutoReconnect;
+
+    @Setter
+    @Getter
+    /**
+     * Flag to notify automated reconnect session to re-established connection after disconnect. It will be used
+     * if user will open connection using {@link #connectAndLogin()} method and provide {@link UserCredentialsProvider}.
+     */
+    private boolean reconnectOnUserInitiated;
+
     private Map<Class<? extends ClientHandler>, ClientHandler> handlers = new HashMap<>();
     private Map<EMsg, Consumer<PacketMessage>> defaultPacketHandlers;
 
     private LogOnDetailsRecord currentLoggedUser;
-    private boolean reconnectOnUserInitiated;
     private boolean connectingInProgress;
 
     /**
@@ -410,6 +426,7 @@ public class SteamClient extends CMClient {
         } while (Objects.isNull(logOnResponse) || logOnResponse.getResult() != EResult.OK);
 
         LOGGER.debug("Successfully loged on with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
+        checkAndRunAutoReconnectCallback();
         return logOnResponse;
     }
 
@@ -468,6 +485,12 @@ public class SteamClient extends CMClient {
             TimeUnit.MILLISECONDS.sleep(DEFAULT_RECONECT_TIMEOUT);
         } catch (InterruptedException ex) {
             LOGGER.debug("Exception occuers during waiting connection retry: {}", ex.getMessage());
+        }
+    }
+
+    private void checkAndRunAutoReconnectCallback() {
+        if (Objects.nonNull(onAutoReconnect)) {
+            onAutoReconnect.accept(this);
         }
     }
 }
