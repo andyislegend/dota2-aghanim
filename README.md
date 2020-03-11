@@ -121,7 +121,7 @@ public static void main(String[] args) throws CallbackTimeoutException {
         details.setUsername(args[0]);
         details.setPassword(args[1]);
 
-        var steamUser = new SteamUser(steamClient);
+        var steamUser = steamClient.getHandler(SteamUser.class);
         steamUser.logOn(details)
                 .thenAccept((logOnResponse) -> System.out.println("Result of logOn response: " + logOnResponse.getResult().name()))
                 .get(timeoutInMillis, TimeUnit.MILLISECONDS);
@@ -144,7 +144,7 @@ public static void main(String[] args) throws CallbackTimeoutException {
     details.setUsername(args[0]);
     details.setPassword(args[1]);
 
-    var steamUser = new SteamUser(steamClient);
+    var steamUser = steamClient.getHandler(SteamUser.class);
     try {
         var logOnResponse = steamUser.logOn(details, timeoutInMillis);
         System.out.println("Result of logOn response: " + logOnResponse.getResult().name());
@@ -252,11 +252,25 @@ public static void main(String[] args) throws InterruptedException, ExecutionExc
     //Here we already open connection and logIn to Steam Network
     
     // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
-    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var gameServer = steamClient.getHandler(SteamGameServer.class);
+    var dotaClient = steamClient.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+    try {
+        gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+        dotaClient.sendClientHello(timeoutInMillis);
+    } catch (CallbackTimeoutException e) {
+        steamUser.logOff();
+    }
     var dotaMatchId = 5239025268L;
-    dotaClient.getMatchDetails(dotaMatchId)
-            .thenAccept(matchDetails -> System.out.println("Match duration time: " + matchDetails.getDuration()))
-            .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+    try {
+        dotaClient.getMatchDetails(dotaMatchId)
+                .thenAccept(matchDetails -> System.out.println("Match duration time: " + matchDetails.getDuration()))
+                .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+        System.out.println("Timeout message: " + e.getMessage());
+    } finally {
+        // We need to log off or disconnect from Steam Server to stop application.
+        steamUser.logOff();
+    }
 }
 ```
 
@@ -269,10 +283,24 @@ public static void main(String[] args) throws CallbackTimeoutException {
     //Here we already open connection and logIn to Steam Network
     
     // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
-    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var gameServer = steamClient.getHandler(SteamGameServer.class);
+    var dotaClient = steamClient.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+    try {
+        gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+        dotaClient.sendClientHello(timeoutInMillis);
+    } catch (CallbackTimeoutException e) {
+        steamUser.logOff();
+    }
     var dotaMatchId = 5239025268L;
-    var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
-    System.out.println("Match duration time: " + matchDetails.getDuration());
+    try {
+        var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
+        System.out.println("Match duration time: " + matchDetails.getDuration());
+    } catch (CallbackTimeoutException e) {
+        System.out.println("Timeout message: " + e.getMessage());
+    } finally {
+        // We need to log off or disconnect from Steam Server to stop application.
+        steamUser.logOff();
+    }
 }
 
 ```
@@ -305,7 +333,7 @@ private void onLoggedOn(LoggedOnCallback callback) {
 
     }
     System.out.println("Logon to Steam: " + callback.getResult());
-    gameServerAsync.sendGamePlayed(SteamGame.Dota2.getApplicationId());
+    gameServerAsync.sendGamePlayed(List.of(SteamGame.Dota2.getApplicationId()));
 }
 
 // Callback for handling Game played response

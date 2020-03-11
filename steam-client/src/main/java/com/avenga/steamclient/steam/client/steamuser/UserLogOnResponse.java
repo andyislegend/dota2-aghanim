@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser;
+package com.avenga.steamclient.steam.client.steamuser;
 
 import com.avenga.steamclient.enums.EAccountFlags;
 import com.avenga.steamclient.enums.EResult;

@@ -23,10 +23,10 @@ import com.avenga.steamclient.protobufs.steamclient.SteammessagesPlayerSteamclie
 import com.avenga.steamclient.provider.UserCredentialsProvider;
 import com.avenga.steamclient.steam.CMClient;
 import com.avenga.steamclient.steam.client.callback.ConnectedClientCallbackHandler;
-import com.avenga.steamclient.steam.client.callback.DisconnectedClientCallbackHandler;
-import com.avenga.steamclient.steam.coordinator.AbstractGameCoordinator;
-import com.avenga.steamclient.steam.steamuser.SteamUser;
-import com.avenga.steamclient.steam.steamuser.UserLogOnResponse;
+import com.avenga.steamclient.steam.client.steamgamecoordinator.SteamGameCoordinator;
+import com.avenga.steamclient.steam.client.steamgameserver.SteamGameServer;
+import com.avenga.steamclient.steam.client.steamuser.SteamUser;
+import com.avenga.steamclient.steam.client.steamuser.UserLogOnResponse;
 import com.avenga.steamclient.util.MessageUtil;
 import com.avenga.steamclient.util.SteamEnumUtils;
 import lombok.Getter;
@@ -101,6 +101,8 @@ public class SteamClient extends CMClient {
         );
 
         addHandler(new SteamUser());
+        addHandler(new SteamGameServer());
+        addHandler(new SteamGameCoordinator());
     }
 
     /**
@@ -217,8 +219,7 @@ public class SteamClient extends CMClient {
     /**
      * Handle packet message received from Steam Network or Game Coordinator server.
      * <p>
-     * Based on packet message type received from server first callback from
-     * the {@link SteamClient} or {@link AbstractGameCoordinator} queue will picked and complete.
+     * Based on packet message type received from server callback from the {@link SteamClient} queue will picked and complete.
      *
      * @param packetMessage Message received from Steam server.
      * @return Was packet message processed by registered handlers.
@@ -265,8 +266,8 @@ public class SteamClient extends CMClient {
     /**
      * Returns a registered handler.
      *
-     * @param type The type of the handler to cast to. Must derive from ClientGCMessageHandler.
-     * @param <T>  The type of the handler to cast to. Must derive from ClientGCMessageHandler.
+     * @param type The type of the handler to cast to. Must derive from {@link ClientHandler}.
+     * @param <T>  The type of the handler to cast to. Must derive from {@link ClientHandler}.
      * @return A registered handler on success, or null if the handler could not be found.
      */
     @SuppressWarnings("unchecked")

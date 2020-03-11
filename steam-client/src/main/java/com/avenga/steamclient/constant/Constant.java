@@ -4,6 +4,8 @@ public class Constant {
 
     public static final String WEB_API_BASE_ADDRESS = "https://api.steampowered.com/";
 
+    public static final int MAX_PLAYED_GAMES = 32;
+
     public static final int CONNECTED_PACKET_CODE = -1000;
     public static final int DISCONNECTED_PACKET_CODE = -1001;
 

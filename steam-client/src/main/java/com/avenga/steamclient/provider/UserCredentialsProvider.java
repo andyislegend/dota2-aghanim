@@ -1,7 +1,7 @@
 package com.avenga.steamclient.provider;
 
 import com.avenga.steamclient.model.steam.user.LogOnDetailsRecord;
-import com.avenga.steamclient.steam.steamuser.LogOnDetails;
+import com.avenga.steamclient.steam.client.steamuser.LogOnDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

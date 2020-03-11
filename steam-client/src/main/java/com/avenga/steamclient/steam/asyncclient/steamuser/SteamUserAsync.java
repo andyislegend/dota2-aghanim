@@ -22,7 +22,7 @@ import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLog
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientNewLoginKey;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientRequestWebAPIAuthenticateUserNonceResponse;
 import com.avenga.steamclient.steam.asyncclient.steamuser.callback.*;
-import com.avenga.steamclient.steam.steamuser.LogOnDetails;
+import com.avenga.steamclient.steam.client.steamuser.LogOnDetails;
 import com.avenga.steamclient.util.HardwareUtils;
 import com.avenga.steamclient.util.NetworkUtils;
 import com.avenga.steamclient.util.StringUtils;
