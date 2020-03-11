@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser;
+package com.avenga.steamclient.steam.client.steamuser;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.enums.EAccountType;
@@ -10,7 +10,7 @@ import com.avenga.steamclient.model.SteamID;
 import com.avenga.steamclient.model.steam.ClientHandler;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogOff;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogon;
-import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
+import com.avenga.steamclient.steam.client.steamuser.callback.UserLogOnCallbackHandler;
 import com.avenga.steamclient.util.HardwareUtils;
 import com.avenga.steamclient.util.NetworkUtils;
 import com.avenga.steamclient.util.StringUtils;

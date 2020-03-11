@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser.callback;
+package com.avenga.steamclient.steam.client.steamuser.callback;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.base.Message;
@@ -10,7 +10,7 @@ import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogonResponse;
 import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
-import com.avenga.steamclient.steam.steamuser.UserLogOnResponse;
+import com.avenga.steamclient.steam.client.steamuser.UserLogOnResponse;
 
 public class UserLogOnCallbackHandler extends AbstractCallbackHandler<PacketMessage> {
 

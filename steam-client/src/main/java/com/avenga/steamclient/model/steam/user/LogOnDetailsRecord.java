@@ -1,6 +1,6 @@
 package com.avenga.steamclient.model.steam.user;
 
-import com.avenga.steamclient.steam.steamuser.LogOnDetails;
+import com.avenga.steamclient.steam.client.steamuser.LogOnDetails;
 import lombok.Getter;
 
 import java.time.Instant;

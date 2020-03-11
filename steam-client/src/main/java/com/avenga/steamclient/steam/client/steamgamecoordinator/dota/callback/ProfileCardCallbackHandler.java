@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.coordinator.callback;
+package com.avenga.steamclient.steam.client.steamgamecoordinator.dota.callback;
 
 import com.avenga.steamclient.base.ClientGCProtobufMessage;
 import com.avenga.steamclient.base.GCPacketMessage;
