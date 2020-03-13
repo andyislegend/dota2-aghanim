@@ -64,4 +64,9 @@ public class SteamMessageCallback<TPacket> implements CompletableCallback {
         TPacket packetMessage = (TPacket) genericPacketMessage;
         callback.complete(packetMessage);
     }
+
+    @Override
+    public void cancel() {
+        callback.cancel(true);
+    }
 }

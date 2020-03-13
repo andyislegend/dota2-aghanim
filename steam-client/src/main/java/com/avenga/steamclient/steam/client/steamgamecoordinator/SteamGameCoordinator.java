@@ -64,6 +64,7 @@ public class SteamGameCoordinator extends ClientHandler {
 
     /**
      * Send Hello message to the Game Coordinator server to initiate session.
+     * Callback could be canceled during execution of the auto reconnect logic.
      *
      * @param sourceEngine  Type of the source engine.
      * @param applicationId ID of the application of the Steam Network.

@@ -205,6 +205,7 @@ public class SteamClient extends CMClient {
     public UserLogOnResponse connectAndLogin() {
         Objects.requireNonNull(credentialsProvider, "User credential provider wasn't initialized");
 
+        checkAndCleanQueue();
         var userLogOnResponse = loginAndGetResponse();
         credentialsProvider.startResetBannedCredentialJob();
         return userLogOnResponse;
@@ -311,6 +312,7 @@ public class SteamClient extends CMClient {
         LOGGER.debug("Client was disconnected. Disconnect initiated by user: {}. Reconnect initiated by user : {}",
                 userInitiated, reconnectOnUserInitiated);
         findAndCompleteCallback(Constant.DISCONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID, null);
+        cleanBeforeDisconnect(userInitiated);
         checkAndReconnect(userInitiated);
     }
 
@@ -407,7 +409,7 @@ public class SteamClient extends CMClient {
 
     private UserLogOnResponse loginAndGetResponse() {
         var steamUser = getHandler(SteamUser.class);
-        UserLogOnResponse logOnResponse = null;
+        Optional<UserLogOnResponse> logOnResponse = Optional.empty();
 
         do {
             openConnection();
@@ -415,19 +417,19 @@ public class SteamClient extends CMClient {
             try {
                 logOnResponse = steamUser.logOn(currentLoggedUser.getLogOnDetails(), DEFAULT_RECONECT_TIMEOUT);
             } catch (CallbackTimeoutException e) {
-                logOnResponse = null;
+                logOnResponse = Optional.empty();
                 currentLoggedUser.blockFor(LogOnDetailsRecord.RECONNECT_TIMEOUT);
             }
 
-            if (Objects.nonNull(logOnResponse) && logOnResponse.getResult() != EResult.OK) {
-                checkAndBlockCredentials(logOnResponse.getResult());
+            if (logOnResponse.isPresent() && logOnResponse.get().getResult() != EResult.OK) {
+                checkAndBlockCredentials(logOnResponse.get().getResult());
             }
             credentialsProvider.returnKey(currentLoggedUser);
-        } while (Objects.isNull(logOnResponse) || logOnResponse.getResult() != EResult.OK);
+        } while (!logOnResponse.isPresent() || logOnResponse.get().getResult() != EResult.OK);
 
         LOGGER.debug("Successfully loged on with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
         checkAndRunAutoReconnectCallback();
-        return logOnResponse;
+        return logOnResponse.get();
     }
 
     private void openConnection() {
@@ -491,6 +493,19 @@ public class SteamClient extends CMClient {
     private void checkAndRunAutoReconnectCallback() {
         if (Objects.nonNull(onAutoReconnect)) {
             onAutoReconnect.accept(this);
+        }
+    }
+
+    private void checkAndCleanQueue() {
+        if (!callbacksQueue.isEmpty()) {
+            callbacksQueue.forEach(CompletableCallback::cancel);
+            callbacksQueue.clear();
+        }
+    }
+
+    private void cleanBeforeDisconnect(boolean userInitiated) {
+        if (userInitiated && !connectingInProgress && !reconnectOnUserInitiated) {
+            checkAndCleanQueue();
         }
     }
 }
