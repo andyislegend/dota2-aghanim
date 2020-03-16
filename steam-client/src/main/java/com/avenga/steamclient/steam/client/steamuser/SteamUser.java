@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser;
+package com.avenga.steamclient.steam.client.steamuser;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.enums.EAccountType;
@@ -7,29 +7,27 @@ import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLogon;
 import com.avenga.steamclient.model.SteamID;
+import com.avenga.steamclient.model.steam.ClientHandler;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogOff;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogon;
 import com.avenga.steamclient.steam.client.SteamClient;
-import com.avenga.steamclient.steam.steamuser.callback.UserLogOnCallbackHandler;
+import com.avenga.steamclient.steam.client.steamuser.callback.UserLogOnCallbackHandler;
 import com.avenga.steamclient.util.HardwareUtils;
 import com.avenga.steamclient.util.NetworkUtils;
 import com.avenga.steamclient.util.StringUtils;
 import com.google.protobuf.ByteString;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class SteamUser {
-
-    private final SteamClient client;
-
-    public SteamUser(SteamClient client) {
-        this.client = client;
-    }
+public class SteamUser extends ClientHandler {
 
     /**
      * Logs the client into the Steam3 network.
-     * The client should already have been connected at this point.
+     * Callback could be canceled during execution of the auto reconnect logic.
+     * <p>
+     * The {@link SteamClient} should already have been connected at this point.
      *
      * @param logOnDetails The logOnDetails to use for logging on.
      * @return  CompletableFuture Callback with {@link UserLogOnResponse} on the user logOn request
@@ -43,8 +41,10 @@ public class SteamUser {
 
     /**
      * Logs the client into the Steam3 network.
-     * Result will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.
-     * The client should already have been connected at this point.
+     * Result will be returned if callback will be finished in time and won't be cancled during execution auto reconnect logic,
+     * otherwise callback after specified timeout will be removed fron queue.
+     * <p>
+     * The {@link SteamClient} should already have been connected at this point.
      *
      * @param logOnDetails The logOnDetails to use for logging on.
      * @param timeout The time which callback handler will wait before cancel it, in milliseconds.
@@ -52,10 +52,10 @@ public class SteamUser {
      * @throws CallbackTimeoutException if the wait timed out
      * @return response on the user logOn request
      */
-    public UserLogOnResponse logOn(LogOnDetails logOnDetails, long timeout) throws CallbackTimeoutException {
+    public Optional<UserLogOnResponse> logOn(LogOnDetails logOnDetails, long timeout) throws CallbackTimeoutException {
         var userLogOnCallback = this.client.addCallbackToQueue(UserLogOnCallbackHandler.CALLBACK_MESSAGE_CODE);
         sendLogonRequest(logOnDetails);
-        return UserLogOnCallbackHandler.handle(userLogOnCallback, timeout);
+        return UserLogOnCallbackHandler.handle(userLogOnCallback, timeout, client);
     }
 
     /**

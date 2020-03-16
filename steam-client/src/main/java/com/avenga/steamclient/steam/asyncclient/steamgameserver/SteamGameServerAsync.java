@@ -2,6 +2,7 @@ package com.avenga.steamclient.steam.asyncclient.steamgameserver;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.base.PacketMessage;
+import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EAccountType;
 import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.enums.EResult;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.Inet6Address;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -129,6 +131,7 @@ public class SteamGameServerAsync extends ClientMessageHandler {
     /**
      * Sends the server's status to the Steam network.
      * Results are returned in a {@link StatusReplyCallback} callback.
+     *
      * @param details A {@link StatusDetails} object containing the server's status.
      */
     public void sendStatus(StatusDetails details) {
@@ -144,14 +147,23 @@ public class SteamGameServerAsync extends ClientMessageHandler {
     /**
      * Sends the game played status to the Steam network.
      * Results are returned in a {@link GameConnectTokensCallback} callback.
-     * @param applicationId The application ID served by this game server.
+     *
+     * @param applicationIds The application IDs served by this game server.
      */
-    public void sendGamePlayed(int applicationId) {
+    public void sendGamePlayed(List<Integer> applicationIds) {
+        Objects.requireNonNull(applicationIds, "List of the application ids wasn't provided");
+        if (applicationIds.size() > Constant.MAX_PLAYED_GAMES) {
+            throw new IllegalArgumentException("Steam only allow " + Constant.MAX_PLAYED_GAMES + " games to be in played status at one time");
+        }
+
         var gamePlayedMessage = new ClientMessageProtobuf<CMsgClientGamesPlayed.Builder>(CMsgClientGamesPlayed.class, ClientGamesPlayed);
-        var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
-                .setGameId(applicationId)
-                .build();
-        gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
+
+        applicationIds.forEach(applicationId -> {
+            var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
+                    .setGameId(applicationId)
+                    .build();
+            gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
+        });
         client.send(gamePlayedMessage);
     }
 

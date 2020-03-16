@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser.callback;
+package com.avenga.steamclient.steam.client.steamuser.callback;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.base.Message;
@@ -8,17 +8,21 @@ import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLogOnResponse;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientLogonResponse;
+import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
-import com.avenga.steamclient.steam.steamuser.UserLogOnResponse;
+import com.avenga.steamclient.steam.client.steamuser.UserLogOnResponse;
+import com.avenga.steamclient.util.CallbackHandlerUtils;
+
+import java.util.Optional;
 
 public class UserLogOnCallbackHandler extends AbstractCallbackHandler<PacketMessage> {
 
     public static final int CALLBACK_MESSAGE_CODE = EMsg.ClientLogOnResponse.code();
 
-    public static UserLogOnResponse handle(SteamMessageCallback<PacketMessage> callback, long timeout) throws CallbackTimeoutException {
-        PacketMessage packetMessage = waitAndGetPacketMessage(callback, timeout, "UserLogOn");
+    public static Optional<UserLogOnResponse> handle(SteamMessageCallback<PacketMessage> callback, long timeout, SteamClient client) throws CallbackTimeoutException {
+        var packetMessage = waitAndGetMessageOrRemoveAfterTimeout(callback, timeout, "UserLogOn", client);
 
-        return getMessage(packetMessage);
+        return CallbackHandlerUtils.getValueOrDefault(packetMessage, UserLogOnCallbackHandler::getMessage);
     }
 
     public static UserLogOnResponse getMessage(PacketMessage packetMessage) {

@@ -1,4 +1,4 @@
-package com.avenga.steamclient.steam.steamuser;
+package com.avenga.steamclient.steam.client.steamuser;
 
 import com.avenga.steamclient.enums.EOSType;
 import com.avenga.steamclient.model.SteamID;

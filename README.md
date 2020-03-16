@@ -106,7 +106,49 @@ Developer should consider next Steam Network and Game Coordinator behavior:
 > Sometimes Steam server could ignore request and won't respond on client request. When developer want to use CompletableFuture from regular methods of the synchronous client, better always to keep this in mind.
 
 Before making calls to Steam Network and Game Coordinator services you need to open connection and login to Steam server.
-  ###### LogIn to Steam server using synchronous Steam client and regular methods:
+Synchronous client provide **manual** and **automatic** control on connection logic:
+
+##### Automatic connection logic
+User can use automated logic provided by Steam client, which will automatically: 
+1) Re-established connection in case it was disconnected by Steam server.
+2) Get next user credentials registered in `UserCredentialsProvider` and try to login to Steam Network.
+3) Execute additional actions described in `onAutoReconnect` callback.
+
+ ```java
+public static void main(String[] args) throws CallbackTimeoutException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+        var timeoutInMillis = 15000;
+        var steamClient = new SteamClient();
+
+        LogOnDetails logOnDetails = new LogOnDetails();
+        logOnDetails.setUsername(args[0]);
+        logOnDetails.setPassword(args[1]);
+        // We need to provide list of the user credentials, which automatic reconnect logic will use to rotate connection session.
+        steamClient.setCredentialsProvider(new UserCredentialsProvider(List.of(logOnDetails)));
+        
+        // We can register additional actions, which reconnect logic will execute after successfully established connection.
+        steamClient.setOnAutoReconnect((client) -> {
+            var gameServer = client.getHandler(SteamGameServer.class);
+            var dotaClient = client.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+            try {
+                gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+                dotaClient.sendClientHello(timeoutInMillis);
+            } catch (CallbackTimeoutException e) {
+                client.setReconnectOnUserInitiated(true);
+                client.disconnect();
+            }
+        });
+        
+        // Now we can establish connection and login to Steam Network using user credentials registered in UserCredentialsProvider.
+        steamClient.connectAndLogin();
+
+        // now You can query for data using Steam Network API.
+    }
+}
+ ```
+
+##### Manual connection logic
+###### LogIn to Steam server using synchronous Steam client and regular methods:
  ```java
 public static void main(String[] args) throws CallbackTimeoutException {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
@@ -121,7 +163,7 @@ public static void main(String[] args) throws CallbackTimeoutException {
         details.setUsername(args[0]);
         details.setPassword(args[1]);
 
-        var steamUser = new SteamUser(steamClient);
+        var steamUser = steamClient.getHandler(SteamUser.class);
         steamUser.logOn(details)
                 .thenAccept((logOnResponse) -> System.out.println("Result of logOn response: " + logOnResponse.getResult().name()))
                 .get(timeoutInMillis, TimeUnit.MILLISECONDS);
@@ -144,10 +186,11 @@ public static void main(String[] args) throws CallbackTimeoutException {
     details.setUsername(args[0]);
     details.setPassword(args[1]);
 
-    var steamUser = new SteamUser(steamClient);
+    var steamUser = steamClient.getHandler(SteamUser.class);
     try {
         var logOnResponse = steamUser.logOn(details, timeoutInMillis);
-        System.out.println("Result of logOn response: " + logOnResponse.getResult().name());
+        logOnResponse.ifPresent(response ->
+                System.out.println("Result of logOn response: " + response.getResult().name()));
     } catch (CallbackTimeoutException e) {
         // You can retry or simply disconnect here and try later on.
         steamClient.disconnect();
@@ -252,11 +295,25 @@ public static void main(String[] args) throws InterruptedException, ExecutionExc
     //Here we already open connection and logIn to Steam Network
     
     // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
-    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var gameServer = steamClient.getHandler(SteamGameServer.class);
+    var dotaClient = steamClient.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+    try {
+        gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+        dotaClient.sendClientHello(timeoutInMillis);
+    } catch (CallbackTimeoutException e) {
+        steamUser.logOff();
+    }
     var dotaMatchId = 5239025268L;
-    dotaClient.getMatchDetails(dotaMatchId)
-            .thenAccept(matchDetails -> System.out.println("Match duration time: " + matchDetails.getDuration()))
-            .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+    try {
+        dotaClient.getMatchDetails(dotaMatchId)
+                .thenAccept(matchDetails -> System.out.println("Match duration time: " + matchDetails.getDuration()))
+                .get(timeoutInMillis, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+        System.out.println("Timeout message: " + e.getMessage());
+    } finally {
+        // We need to log off or disconnect from Steam Server to stop application.
+        steamUser.logOff();
+    }
 }
 ```
 
@@ -269,10 +326,25 @@ public static void main(String[] args) throws CallbackTimeoutException {
     //Here we already open connection and logIn to Steam Network
     
     // DotaClient will automatically set DOTA2 played status in Steam and make "Hello" message exchange with Game Coordinator.
-    var dotaClient = new DotaClient(new GameCoordinator(steamClient), timeoutInMillis);
+    var gameServer = steamClient.getHandler(SteamGameServer.class);
+    var dotaClient = steamClient.getHandler(SteamGameCoordinator.class).getHandler(DotaClient.class);
+    try {
+        gameServer.setClientPlayedGame(List.of(SteamGame.Dota2.getApplicationId()), timeoutInMillis);
+        dotaClient.sendClientHello(timeoutInMillis);
+    } catch (CallbackTimeoutException e) {
+        steamUser.logOff();
+    }
     var dotaMatchId = 5239025268L;
-    var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
-    System.out.println("Match duration time: " + matchDetails.getDuration());
+    try {
+        var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
+        matchDetails.ifPresent(match ->
+                System.out.println("Match duration time: " + match.getDuration()));
+    } catch (CallbackTimeoutException e) {
+        System.out.println("Timeout message: " + e.getMessage());
+    } finally {
+        // We need to log off or disconnect from Steam Server to stop application.
+        steamUser.logOff();
+    }
 }
 
 ```
@@ -305,7 +377,7 @@ private void onLoggedOn(LoggedOnCallback callback) {
 
     }
     System.out.println("Logon to Steam: " + callback.getResult());
-    gameServerAsync.sendGamePlayed(SteamGame.Dota2.getApplicationId());
+    gameServerAsync.sendGamePlayed(List.of(SteamGame.Dota2.getApplicationId()));
 }
 
 // Callback for handling Game played response

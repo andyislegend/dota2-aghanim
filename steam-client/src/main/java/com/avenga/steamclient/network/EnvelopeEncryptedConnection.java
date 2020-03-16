@@ -55,7 +55,7 @@ public class EnvelopeEncryptedConnection extends Connection {
                 return;
             }
 
-            PacketMessage packetMessage = CMClient.getPacketMsg(e.getData());
+            PacketMessage packetMessage = CMClient.getPacketMessage(e.getData());
 
             if (!isExpectedEMsg(packetMessage.getMessageType())) {
                 LOGGER.debug("Rejected EMsg: " + packetMessage.getMessageType() + " during channel setup");
