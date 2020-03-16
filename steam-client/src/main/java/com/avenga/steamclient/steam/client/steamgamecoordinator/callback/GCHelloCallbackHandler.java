@@ -6,13 +6,16 @@ import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.protobufs.dota.GCSdkGCMessages.CMsgClientWelcome;
 import com.avenga.steamclient.steam.client.callback.AbstractCallbackHandler;
+import com.avenga.steamclient.util.CallbackHandlerUtils;
+
+import java.util.Optional;
 
 public class GCHelloCallbackHandler extends AbstractCallbackHandler<GCPacketMessage> {
 
-    public static CMsgClientWelcome handle(SteamMessageCallback<GCPacketMessage> callback, long timeout) throws CallbackTimeoutException {
-        GCPacketMessage gcPacketMessage = waitAndGetPacketMessage(callback, timeout, "GCHello");
+    public static Optional<CMsgClientWelcome> handle(SteamMessageCallback<GCPacketMessage> callback, long timeout) throws CallbackTimeoutException {
+        var gcPacketMessage = waitAndGetPacketMessage(callback, timeout, "GCHello");
 
-        return getMessage(gcPacketMessage);
+        return CallbackHandlerUtils.getValueOrDefault(gcPacketMessage, GCHelloCallbackHandler::getMessage);
     }
 
     public static CMsgClientWelcome getMessage(GCPacketMessage gcPacketMessage) {

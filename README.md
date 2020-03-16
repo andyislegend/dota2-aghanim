@@ -189,7 +189,8 @@ public static void main(String[] args) throws CallbackTimeoutException {
     var steamUser = steamClient.getHandler(SteamUser.class);
     try {
         var logOnResponse = steamUser.logOn(details, timeoutInMillis);
-        System.out.println("Result of logOn response: " + logOnResponse.getResult().name());
+        logOnResponse.ifPresent(response ->
+                System.out.println("Result of logOn response: " + response.getResult().name()));
     } catch (CallbackTimeoutException e) {
         // You can retry or simply disconnect here and try later on.
         steamClient.disconnect();
@@ -336,7 +337,8 @@ public static void main(String[] args) throws CallbackTimeoutException {
     var dotaMatchId = 5239025268L;
     try {
         var matchDetails = dotaClient.getMatchDetails(dotaMatchId, timeoutInMillis);
-        System.out.println("Match duration time: " + matchDetails.getDuration());
+        matchDetails.ifPresent(match ->
+                System.out.println("Match duration time: " + match.getDuration()));
     } catch (CallbackTimeoutException e) {
         System.out.println("Timeout message: " + e.getMessage());
     } finally {

@@ -15,6 +15,7 @@ import com.avenga.steamclient.steam.client.steamgamecoordinator.dota.callback.Pr
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesId.EDOTAGCMsg.*;
@@ -34,6 +35,7 @@ public class DotaClient extends ClientGCHandler {
 
     /**
      * Send Hello message to the Game Coordinator server to initiate session.
+     * Callback could be canceled during execution of the auto reconnect logic.
      *
      * @param timeout The time which callback handler will wait before cancel it, in milliseconds.
      * @throws CallbackTimeoutException if the wait timed out
@@ -44,6 +46,8 @@ public class DotaClient extends ClientGCHandler {
 
     /**
      * Gets DOTA 2 match details.
+     * Callback could be canceled during execution of the auto reconnect logic.
+     * <p>
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param matchId Id of the DOTA 2 match.
@@ -58,7 +62,9 @@ public class DotaClient extends ClientGCHandler {
 
     /**
      * Gets DOTA 2 match details.
-     * Result will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.
+     * Result will be returned if callback will be finished in time and won't be cancled during auto reconnect logic,
+     * otherwise callback after specified timeout will be removed fron queue.
+     * <p>
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param matchId Id of the DOTA 2 match.
@@ -66,7 +72,7 @@ public class DotaClient extends ClientGCHandler {
      * @return details of the DOTA 2 match.
      * @throws CallbackTimeoutException if the wait timed out
      */
-    public DotaMatchDetails getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
+    public Optional<DotaMatchDetails> getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
         var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
         sendMatchDetailsRequest(matchId);
         return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout, getClient());
@@ -74,6 +80,8 @@ public class DotaClient extends ClientGCHandler {
 
     /**
      * Gets DOTA 2 user account profile card.
+     * Callback could be canceled during execution of the auto reconnect logic.
+     * <p>
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param accountId Id of the DOTA 2 user account.
@@ -88,7 +96,9 @@ public class DotaClient extends ClientGCHandler {
 
     /**
      * Gets DOTA 2 user account profile card.
-     * Result will be returned if callback will be finished in time, otherwise callback after specified timeout will be canceled.
+     * Result will be returned if callback will be finished in time and won't be cancled during auto reconnect logic,
+     * otherwise callback after specified timeout will be removed fron queue.
+     * <p>
      * The {@link SteamClient} should already have been connected at this point.
      *
      * @param accountId Id of the DOTA 2 user account.
@@ -96,7 +106,7 @@ public class DotaClient extends ClientGCHandler {
      * @return user account profile card.
      * @throws CallbackTimeoutException if the wait timed out
      */
-    public DotaProfileCard getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
+    public Optional<DotaProfileCard> getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
         var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
         sendProfileCardRequest(accountId);
         return ProfileCardCallbackHandler.handle(profileCardCallback, timeout, getClient());
