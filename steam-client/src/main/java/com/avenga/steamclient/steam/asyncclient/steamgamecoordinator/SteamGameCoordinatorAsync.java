@@ -130,8 +130,7 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
 
         var gcMessage = new GCMessage(msg.getBody());
 
-        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {}) (AppId: {})",
-                SteamEnumUtils.getEnumName(gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(),
+        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {}) (AppId: {})", gcMessage.getMessageType(), gcMessage.geteMsg(),
                 gcMessage.isProto(), gcMessage.getApplicationID());
 
         gcHandlers.forEach((clazz, handler) -> {

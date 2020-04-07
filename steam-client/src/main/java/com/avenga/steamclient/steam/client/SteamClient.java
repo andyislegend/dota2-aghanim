@@ -1,15 +1,15 @@
 package com.avenga.steamclient.steam.client;
 
-import com.avenga.steamclient.base.ClientMessageProtobuf;
-import com.avenga.steamclient.base.GCPacketMessage;
-import com.avenga.steamclient.base.Message;
-import com.avenga.steamclient.base.PacketMessage;
+import com.avenga.steamclient.base.*;
 import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.enums.EResult;
+import com.avenga.steamclient.enums.EServerType;
 import com.avenga.steamclient.exception.CallbackQueueException;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.generated.MsgClientLoggedOff;
+import com.avenga.steamclient.generated.MsgClientServerUnavailable;
+import com.avenga.steamclient.model.JobID;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.steam.ClientHandler;
 import com.avenga.steamclient.model.steam.CompletableCallback;
@@ -28,17 +28,14 @@ import com.avenga.steamclient.steam.client.steamgameserver.SteamGameServer;
 import com.avenga.steamclient.steam.client.steamuser.SteamUser;
 import com.avenga.steamclient.steam.client.steamuser.UserLogOnResponse;
 import com.avenga.steamclient.util.MessageUtil;
-import com.avenga.steamclient.util.SteamEnumUtils;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -86,11 +83,26 @@ public class SteamClient extends CMClient {
      */
     private boolean reconnectOnUserInitiated;
 
-    private Map<Class<? extends ClientHandler>, ClientHandler> handlers = new HashMap<>();
-    private Map<EMsg, Consumer<PacketMessage>> defaultPacketHandlers;
+    @Getter
+    /**
+     * Flag to check when auto reconnect execution is happaning. It could be used for tracking connection state in business logic,
+     * when user will open connection using {@link #connectAndLogin()} method and provide {@link UserCredentialsProvider}.
+     */
+    private boolean isAutoReconnectInProgress;
+
+    /**
+     * Handlers of the Steam Network APIs.
+     */
+    private Map<Class<? extends ClientHandler>, ClientHandler> handlers = new ConcurrentHashMap<>();
+
+    /**
+     * Handlers of the packet messages received from Steam Network.
+     */
+    private Map<EMsg, Consumer<PacketMessage>> clientPacketHandlers = new ConcurrentHashMap<>();
 
     private LogOnDetailsRecord currentLoggedUser;
     private boolean connectingInProgress;
+    private Instant processStartTime;
 
     /**
      * Initializes a new instance of the {@link SteamClient} class with the default configuration.
@@ -107,14 +119,14 @@ public class SteamClient extends CMClient {
     public SteamClient(SteamConfiguration configuration) {
         super(configuration);
         queueSequence.getAndIncrement();
+        processStartTime = Instant.now();
 
-        defaultPacketHandlers = Map.of(
-                EMsg.ClientFromGC, this::handleClientFromGC,
-                EMsg.ClientPlayingSessionState, this::handleGamePlayingSession,
-                EMsg.ClientConcurrentSessionsBase, this::handleGamePlayingSession,
-                EMsg.ServiceMethod, this::handleServiceMethod,
-                EMsg.ClientLoggedOff, this::handleClientLogOff
-        );
+        clientPacketHandlers.put(EMsg.ClientFromGC, this::handleClientFromGC);
+        clientPacketHandlers.put(EMsg.ClientPlayingSessionState, this::handleGamePlayingSession);
+        clientPacketHandlers.put(EMsg.ClientConcurrentSessionsBase, this::handleGamePlayingSession);
+        clientPacketHandlers.put(EMsg.ServiceMethod, this::handleServiceMethod);
+        clientPacketHandlers.put(EMsg.ClientLoggedOff, this::handleClientLogOff);
+        clientPacketHandlers.put(EMsg.ClientServerUnavailable, this::handleClientServerUnavailable);
 
         addHandler(new SteamUser());
         addHandler(new SteamGameServer());
@@ -247,12 +259,12 @@ public class SteamClient extends CMClient {
             return false;
         }
 
-        var packetHandler = defaultPacketHandlers.get(packetMessage.getMessageType());
+        var packetHandler = clientPacketHandlers.get(packetMessage.getMessageType());
 
         if (Objects.nonNull(packetHandler)) {
             packetHandler.accept(packetMessage);
         } else {
-            findAndCompleteCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage);
+            findAndCompleteCallback(getCallbackPredicate(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID), packetMessage);
         }
         return true;
     }
@@ -293,12 +305,41 @@ public class SteamClient extends CMClient {
     }
 
     /**
+     * Returns the next available JobID for job based messages.
+     * JobID is used for specific Steam Network message with inner messages. e.g. {@link EMsg#ServiceMethodCallFromClient}
+     *
+     * @return The next available JobID.
+     */
+    public JobID getNextJobID() {
+        JobID jobID = new JobID();
+        jobID.setBoxID(DEFAULT_SEQUENCE_VALUE);
+        jobID.setProcessID(DEFAULT_SEQUENCE_VALUE);
+        jobID.setSequentialCount(queueSequence.incrementAndGet());
+        jobID.setStartTime(processStartTime);
+
+        return jobID;
+    }
+
+    /**
+     * Register client packet message handler for handling received {@link PacketMessage} from Steam Server Network.
+     *
+     * @param eMsg type of the received packet message.
+     * @param packetMessageHandler handler which provide logic of the processing received message.
+     */
+    public void addClientPacketHandler(EMsg eMsg, Consumer<PacketMessage> packetMessageHandler) {
+        Objects.requireNonNull(eMsg, "EMsg type wasn't provided.");
+        Objects.requireNonNull(packetMessageHandler, "Packet message handler wasn't provided.");
+
+        clientPacketHandlers.put(eMsg, packetMessageHandler);
+    }
+
+    /**
      * After connection with Steam Network server will be established this callback will be executed.
      */
     @Override
     protected void onClientConnected() {
         super.onClientConnected();
-        findAndCompleteCallback(Constant.CONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID, null);
+        findAndCompleteCallback(getCallbackPredicate(Constant.CONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID), null);
     }
 
     /**
@@ -311,14 +352,14 @@ public class SteamClient extends CMClient {
         super.onClientDisconnected(userInitiated);
         LOGGER.debug("Client was disconnected. Disconnect initiated by user: {}. Reconnect initiated by user : {}",
                 userInitiated, reconnectOnUserInitiated);
-        findAndCompleteCallback(Constant.DISCONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID, null);
+        findAndCompleteCallback(getCallbackPredicate(Constant.DISCONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID), null);
         cleanBeforeDisconnect(userInitiated);
         checkAndReconnect(userInitiated);
     }
 
-    private <T> void findAndCompleteCallback(int messageCode, int applicationId, T packetMessage) {
+    private <T> void findAndCompleteCallback(Predicate<CompletableCallback> callbackPredicate, T packetMessage) {
         Optional<CompletableCallback> messageCallback = callbacksQueue.stream()
-                .filter(callback -> callback.getMessageCode() == messageCode && callback.getApplicationId() == applicationId)
+                .filter(callbackPredicate)
                 .findFirst();
 
         messageCallback.ifPresent(callback -> {
@@ -329,24 +370,40 @@ public class SteamClient extends CMClient {
 
     private void handleClientFromGC(PacketMessage packetMessage) {
         var gcMessage = getGCPacketMessage(packetMessage);
-        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {})", SteamEnumUtils.getEnumName(
-                gcMessage.geteMsg()).orElse(""), gcMessage.geteMsg(), gcMessage.isProto());
+        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {})", gcMessage.getMessageType(), gcMessage.geteMsg(), gcMessage.isProto());
 
-        findAndCompleteCallback(gcMessage.geteMsg(), gcMessage.getApplicationID(), gcMessage.getMessage());
+        findAndCompleteCallback(getCallbackPredicate(gcMessage.geteMsg(), gcMessage.getApplicationID()), gcMessage.getMessage());
     }
 
     private void handleGamePlayingSession(PacketMessage packetMessage) {
         ClientMessageProtobuf<CMsgClientPlayingSessionState.Builder> playingSessionBuilder = new ClientMessageProtobuf<>(
                 CMsgClientPlayingSessionState.class, packetMessage);
         var playingSession = playingSessionBuilder.getBody().build();
-        var predicate = getGamePlayedPredicate(playingSession);
+        var predicate = getCallbackPredicate(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID)
+                .and(getGamePlayedPredicate(playingSession));
 
         LOGGER.debug("Playing session game {} blocked: {}", playingSession.getPlayingApp(), playingSession.getPlayingBlocked());
-        findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
+        findAndCompleteCallback(predicate, packetMessage);
     }
 
     private void handleServiceMethod(PacketMessage packetMessage) {
         MessageUtil.readServiceMethodBody(packetMessage).ifPresent(body -> handleServiceMethodBody(packetMessage, body));
+    }
+
+    private void handleClientServerUnavailable(PacketMessage packetMessage) {
+        ExtendedMessage<MsgClientServerUnavailable> serverUnavailableMessage = new ExtendedMessage<>(MsgClientServerUnavailable.class, packetMessage);
+        LOGGER.debug("Recieved client server unavailable for sent message: {} with server type: {}",
+                MessageUtil.getMessage(serverUnavailableMessage.getBody().getEMsgSent()), serverUnavailableMessage.getBody().getEServerTypeUnavailable());
+
+        if (serverUnavailableMessage.getBody().getEServerTypeUnavailable().equals(EServerType.GCH)) {
+            try {
+                TimeUnit.MINUTES.sleep(15);
+            } catch (InterruptedException e) {
+                LOGGER.debug("Waiting of the disconnect timeout was interrupted.");
+            }
+            reconnectOnUserInitiated = true;
+            this.disconnect();
+        }
     }
 
     private void handleClientLogOff(PacketMessage packetMessage) {
@@ -375,25 +432,12 @@ public class SteamClient extends CMClient {
             var gameIds = playedTimesResponse.getGamesList().stream()
                     .map(game -> String.valueOf(game.getAppid()))
                     .collect(Collectors.toList());
-            var predicate = getServiceMethodBodyPredicate(gameIds);
+            var predicate = getCallbackPredicate(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID)
+                    .and(getServiceMethodBodyPredicate(gameIds));
 
             LOGGER.debug("Processing PlayedGame with matches: {}", gameIds);
-            findAndCompleteServiceMethodCallback(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID, packetMessage, predicate);
+            findAndCompleteCallback(predicate, packetMessage);
         }
-    }
-
-    private <T> void findAndCompleteServiceMethodCallback(int messageCode, int applicationId, T packetMessage,
-                                                          Predicate<CompletableCallback> predicate) {
-        Optional<CompletableCallback> messageCallback = callbacksQueue.stream()
-                .filter(callback -> callback.getMessageCode() == messageCode
-                        && callback.getApplicationId() == applicationId
-                        && predicate.test(callback))
-                .findFirst();
-
-        messageCallback.ifPresent(callback -> {
-            callbacksQueue.remove(callback);
-            callback.complete(packetMessage);
-        });
     }
 
     private Predicate<CompletableCallback> getGamePlayedPredicate(CMsgClientPlayingSessionState playingSession) {
@@ -407,7 +451,8 @@ public class SteamClient extends CMClient {
                 && gameIds.contains(completableCallback.getProperties().get(PLAYER_LAST_PLAYED_TIMES).toString());
     }
 
-    private UserLogOnResponse loginAndGetResponse() {
+    private synchronized UserLogOnResponse loginAndGetResponse() {
+        isAutoReconnectInProgress = true;
         var steamUser = getHandler(SteamUser.class);
         Optional<UserLogOnResponse> logOnResponse = Optional.empty();
 
@@ -429,6 +474,8 @@ public class SteamClient extends CMClient {
 
         LOGGER.debug("Successfully loged on with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
         checkAndRunAutoReconnectCallback();
+        isAutoReconnectInProgress = false;
+
         return logOnResponse.get();
     }
 
@@ -507,5 +554,10 @@ public class SteamClient extends CMClient {
         if (userInitiated && !connectingInProgress && !reconnectOnUserInitiated) {
             checkAndCleanQueue();
         }
+    }
+
+    private Predicate<CompletableCallback> getCallbackPredicate(int messageCode, int applicationId) {
+        return completableCallback -> completableCallback.getMessageCode() == messageCode
+                && completableCallback.getApplicationId() == applicationId;
     }
 }
