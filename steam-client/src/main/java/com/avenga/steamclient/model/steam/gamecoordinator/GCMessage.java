@@ -5,6 +5,7 @@ import com.avenga.steamclient.base.GCPacketClientMessageProtobuf;
 import com.avenga.steamclient.base.GCPacketMessage;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver2.CMsgGCClient;
 import com.avenga.steamclient.util.MessageUtil;
+import com.avenga.steamclient.util.SteamEnumUtils;
 
 public class GCMessage {
     private int eMsg;
@@ -43,6 +44,10 @@ public class GCMessage {
      */
     public GCPacketMessage getMessage() {
         return message;
+    }
+
+    public String getMessageType() {
+        return SteamEnumUtils.getEnumName(geteMsg(), appID).orElse("");
     }
 
     private static GCPacketMessage getPacketGCMsg(int eMsg, byte[] data) {

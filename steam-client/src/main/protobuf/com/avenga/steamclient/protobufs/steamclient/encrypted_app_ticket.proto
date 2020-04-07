@@ -1,3 +1,5 @@
+syntax = "proto2";
+
 option java_package = "com.avenga.steamclient.protobufs.steamclient";
 
 option optimize_for = SPEED;
