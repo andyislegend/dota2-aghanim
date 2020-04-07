@@ -151,4 +151,15 @@ public class MessageUtil {
             return 0;
         }
     }
+
+    public static long getTargetJobId(PacketMessage packetMessage) {
+        var header = readHeader(packetMessage);
+        if (header instanceof MsgHdrProtoBuf) {
+            return ((MsgHdrProtoBuf) header).getProto().getJobidTarget();
+        } else if (header instanceof MsgHdr) {
+            return ((MsgHdr) header).getTargetJobID();
+        } else {
+            return ((ExtendedClientMsgHdr) header).getTargetJobID();
+        }
+    }
 }
