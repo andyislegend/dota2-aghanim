@@ -822,13 +822,13 @@ enum EDOTAGCMsg {
     k_EMsgGCToClientNotificationsUpdated = 8639;
     k_EMsgGCtoGCAssociatedExploiterAccountInfo = 8640;
     k_EMsgGCtoGCAssociatedExploiterAccountInfoResponse = 8641;
-	k_EMsgGCtoGCRequestRecalibrationCheck = 8642;
-	k_EMsgGCToClientVACReminder = 8643;
-	k_EMsgClientToGCPullTabsRequest = 8644;
-	k_EMsgGCToClientPullTabsResponse = 8645;
-	k_EMsgClientToGCPullTabsRedeem = 8646;
-	k_EMsgGCToClientPullTabsRedeemResponse = 8647;
-	k_EMsgNeutralItemStats = 8648;
-	k_EMsgGCToServerLobbyHeroBanRates = 8708;
-	k_EMsgSignOutMVPStats = 8712;
+    k_EMsgGCtoGCRequestRecalibrationCheck = 8642;
+    k_EMsgGCToClientVACReminder = 8643;
+    k_EMsgClientToGCPullTabsRequest = 8644;
+    k_EMsgGCToClientPullTabsResponse = 8645;
+    k_EMsgClientToGCPullTabsRedeem = 8646;
+    k_EMsgGCToClientPullTabsRedeemResponse = 8647;
+    k_EMsgNeutralItemStats = 8648;
+    k_EMsgGCToServerLobbyHeroBanRates = 8708;
+    k_EMsgSignOutMVPStats = 8712;
 }

@@ -9,179 +9,179 @@ option cc_generic_services = true;
 option (force_php_generation) = true;
 
 extend .google.protobuf.MessageOptions {
-	optional int32 msgpool_soft_limit = 50000 [default = 32];
-	optional int32 msgpool_hard_limit = 50001 [default = 384];
+    optional int32 msgpool_soft_limit = 50000 [default = 32];
+    optional int32 msgpool_hard_limit = 50001 [default = 384];
 }
 
 extend .google.protobuf.FileOptions {
-	optional bool force_php_generation = 50000 [default = false];
+    optional bool force_php_generation = 50000 [default = false];
 }
 
 extend .google.protobuf.FieldOptions {
-	optional bool php_output_always_number = 50020 [default = false];
+    optional bool php_output_always_number = 50020 [default = false];
 }
 
 enum EProtoClanEventType {
-	k_EClanOtherEvent = 1;
-	k_EClanGameEvent = 2;
-	k_EClanPartyEvent = 3;
-	k_EClanMeetingEvent = 4;
-	k_EClanSpecialCauseEvent = 5;
-	k_EClanMusicAndArtsEvent = 6;
-	k_EClanSportsEvent = 7;
-	k_EClanTripEvent = 8;
-	k_EClanChatEvent = 9;
-	k_EClanGameReleaseEvent = 10;
-	k_EClanBroadcastEvent = 11;
-	k_EClanSmallUpdateEvent = 12;
-	k_EClanPreAnnounceMajorUpdateEvent = 13;
-	k_EClanMajorUpdateEvent = 14;
-	k_EClanDLCReleaseEvent = 15;
-	k_EClanFutureReleaseEvent = 16;
-	k_EClanESportTournamentStreamEvent = 17;
-	k_EClanDevStreamEvent = 18;
-	k_EClanFamousStreamEvent = 19;
-	k_EClanGameSalesEvent = 20;
-	k_EClanGameItemSalesEvent = 21;
-	k_EClanInGameBonusXPEvent = 22;
-	k_EClanInGameLootEvent = 23;
-	k_EClanInGamePerksEvent = 24;
-	k_EClanInGameChallengeEvent = 25;
-	k_EClanInGameContestEvent = 26;
-	k_EClanIRLEvent = 27;
-	k_EClanNewsEvent = 28;
-	k_EClanBetaReleaseEvent = 29;
-	k_EClanInGameContentReleaseEvent = 30;
-	k_EClanFreeTrial = 31;
-	k_EClanSeasonRelease = 32;
-	k_EClanSeasonUpdate = 33;
-	k_EClanCrosspostEvent = 34;
-	k_EClanInGameEventGeneral = 35;
+    k_EClanOtherEvent = 1;
+    k_EClanGameEvent = 2;
+    k_EClanPartyEvent = 3;
+    k_EClanMeetingEvent = 4;
+    k_EClanSpecialCauseEvent = 5;
+    k_EClanMusicAndArtsEvent = 6;
+    k_EClanSportsEvent = 7;
+    k_EClanTripEvent = 8;
+    k_EClanChatEvent = 9;
+    k_EClanGameReleaseEvent = 10;
+    k_EClanBroadcastEvent = 11;
+    k_EClanSmallUpdateEvent = 12;
+    k_EClanPreAnnounceMajorUpdateEvent = 13;
+    k_EClanMajorUpdateEvent = 14;
+    k_EClanDLCReleaseEvent = 15;
+    k_EClanFutureReleaseEvent = 16;
+    k_EClanESportTournamentStreamEvent = 17;
+    k_EClanDevStreamEvent = 18;
+    k_EClanFamousStreamEvent = 19;
+    k_EClanGameSalesEvent = 20;
+    k_EClanGameItemSalesEvent = 21;
+    k_EClanInGameBonusXPEvent = 22;
+    k_EClanInGameLootEvent = 23;
+    k_EClanInGamePerksEvent = 24;
+    k_EClanInGameChallengeEvent = 25;
+    k_EClanInGameContestEvent = 26;
+    k_EClanIRLEvent = 27;
+    k_EClanNewsEvent = 28;
+    k_EClanBetaReleaseEvent = 29;
+    k_EClanInGameContentReleaseEvent = 30;
+    k_EClanFreeTrial = 31;
+    k_EClanSeasonRelease = 32;
+    k_EClanSeasonUpdate = 33;
+    k_EClanCrosspostEvent = 34;
+    k_EClanInGameEventGeneral = 35;
 }
 
 enum PartnerEventNotificationType {
-	k_EEventStart = 0;
-	k_EEventBroadcastStart = 1;
-	k_EEventMatchStart = 2;
-	k_EEventPartnerMaxType = 3;
+    k_EEventStart = 0;
+    k_EEventBroadcastStart = 1;
+    k_EEventMatchStart = 2;
+    k_EEventPartnerMaxType = 3;
 }
 
 message CMsgIPAddress {
-	oneof ip {
-		fixed32 v4 = 1;
-		bytes v6 = 2;
-	}
+    oneof ip {
+        fixed32 v4 = 1;
+        bytes v6 = 2;
+    }
 }
 
 message CMsgIPAddressBucket {
-	optional .CMsgIPAddress original_ip_address = 1;
-	optional fixed64 bucket = 2;
+    optional .CMsgIPAddress original_ip_address = 1;
+    optional fixed64 bucket = 2;
 }
 
 message CMsgProtoBufHeader {
-	optional fixed64 steamid = 1;
-	optional int32 client_sessionid = 2;
-	optional uint32 routing_appid = 3;
-	optional fixed64 jobid_source = 10 [default = 18446744073709551615];
-	optional fixed64 jobid_target = 11 [default = 18446744073709551615];
-	optional string target_job_name = 12;
-	optional int32 seq_num = 24;
-	optional int32 eresult = 13 [default = 2];
-	optional string error_message = 14;
-	optional uint32 auth_account_flags = 16;
-	optional uint32 token_source = 22;
-	optional bool admin_spoofing_user = 23;
-	optional int32 transport_error = 17 [default = 1];
-	optional uint64 messageid = 18 [default = 18446744073709551615];
-	optional uint32 publisher_group_id = 19;
-	optional uint32 sysid = 20;
-	optional uint64 trace_tag = 21;
-	optional uint32 webapi_key_id = 25;
-	optional bool is_from_external_source = 26;
-	repeated uint32 forward_to_sysid = 27;
-	optional uint32 cm_sysid = 28;
-	optional string wg_token = 30;
-	optional uint32 launcher_type = 31 [default = 0];
-	optional uint32 realm = 32 [default = 0];
+    optional fixed64 steamid = 1;
+    optional int32 client_sessionid = 2;
+    optional uint32 routing_appid = 3;
+    optional fixed64 jobid_source = 10 [default = 18446744073709551615];
+    optional fixed64 jobid_target = 11 [default = 18446744073709551615];
+    optional string target_job_name = 12;
+    optional int32 seq_num = 24;
+    optional int32 eresult = 13 [default = 2];
+    optional string error_message = 14;
+    optional uint32 auth_account_flags = 16;
+    optional uint32 token_source = 22;
+    optional bool admin_spoofing_user = 23;
+    optional int32 transport_error = 17 [default = 1];
+    optional uint64 messageid = 18 [default = 18446744073709551615];
+    optional uint32 publisher_group_id = 19;
+    optional uint32 sysid = 20;
+    optional uint64 trace_tag = 21;
+    optional uint32 webapi_key_id = 25;
+    optional bool is_from_external_source = 26;
+    repeated uint32 forward_to_sysid = 27;
+    optional uint32 cm_sysid = 28;
+    optional string wg_token = 30;
+    optional uint32 launcher_type = 31 [default = 0];
+    optional uint32 realm = 32 [default = 0];
 
-	oneof ip_addr {
-		uint32 ip = 15;
-		bytes ip_v6 = 29;
-	}
+    oneof ip_addr {
+        uint32 ip = 15;
+        bytes ip_v6 = 29;
+    }
 }
 
 message CMsgMulti {
-	optional uint32 size_unzipped = 1;
-	optional bytes message_body = 2;
+    optional uint32 size_unzipped = 1;
+    optional bytes message_body = 2;
 }
 
 message CMsgProtobufWrapped {
-	optional bytes message_body = 1;
+    optional bytes message_body = 1;
 }
 
 message CMsgAuthTicket {
-	optional uint32 estate = 1;
-	optional uint32 eresult = 2 [default = 2];
-	optional fixed64 steamid = 3;
-	optional fixed64 gameid = 4;
-	optional uint32 h_steam_pipe = 5;
-	optional uint32 ticket_crc = 6;
-	optional bytes ticket = 7;
+    optional uint32 estate = 1;
+    optional uint32 eresult = 2 [default = 2];
+    optional fixed64 steamid = 3;
+    optional fixed64 gameid = 4;
+    optional uint32 h_steam_pipe = 5;
+    optional uint32 ticket_crc = 6;
+    optional bytes ticket = 7;
 }
 
 message CCDDBAppDetailCommon {
-	optional uint32 appid = 1;
-	optional string name = 2;
-	optional string icon = 3;
-	optional string logo = 4;
-	optional string logo_small = 5;
-	optional bool tool = 6;
-	optional bool demo = 7;
-	optional bool media = 8;
-	optional bool community_visible_stats = 9;
-	optional string friendly_name = 10;
-	optional string propagation = 11;
-	optional bool has_adult_content = 12;
+    optional uint32 appid = 1;
+    optional string name = 2;
+    optional string icon = 3;
+    optional string logo = 4;
+    optional string logo_small = 5;
+    optional bool tool = 6;
+    optional bool demo = 7;
+    optional bool media = 8;
+    optional bool community_visible_stats = 9;
+    optional string friendly_name = 10;
+    optional string propagation = 11;
+    optional bool has_adult_content = 12;
 }
 
 message CMsgAppRights {
-	optional bool edit_info = 1;
-	optional bool publish = 2;
-	optional bool view_error_data = 3;
-	optional bool download = 4;
-	optional bool upload_cdkeys = 5;
-	optional bool generate_cdkeys = 6;
-	optional bool view_financials = 7;
-	optional bool manage_ceg = 8;
-	optional bool manage_signing = 9;
-	optional bool manage_cdkeys = 10;
-	optional bool edit_marketing = 11;
-	optional bool economy_support = 12;
-	optional bool economy_support_supervisor = 13;
-	optional bool manage_pricing = 14;
-	optional bool broadcast_live = 15;
+    optional bool edit_info = 1;
+    optional bool publish = 2;
+    optional bool view_error_data = 3;
+    optional bool download = 4;
+    optional bool upload_cdkeys = 5;
+    optional bool generate_cdkeys = 6;
+    optional bool view_financials = 7;
+    optional bool manage_ceg = 8;
+    optional bool manage_signing = 9;
+    optional bool manage_cdkeys = 10;
+    optional bool edit_marketing = 11;
+    optional bool economy_support = 12;
+    optional bool economy_support_supervisor = 13;
+    optional bool manage_pricing = 14;
+    optional bool broadcast_live = 15;
 }
 
 message CCuratorPreferences {
-	optional uint32 supported_languages = 1;
-	optional bool platform_windows = 2;
-	optional bool platform_mac = 3;
-	optional bool platform_linux = 4;
-	optional bool vr_content = 5;
-	optional bool adult_content_violence = 6;
-	optional bool adult_content_sex = 7;
-	optional uint32 timestamp_updated = 8;
-	repeated uint32 tagids_curated = 9;
-	repeated uint32 tagids_filtered = 10;
-	optional string website_title = 11;
-	optional string website_url = 12;
-	optional string discussion_url = 13;
-	optional bool show_broadcast = 14;
+    optional uint32 supported_languages = 1;
+    optional bool platform_windows = 2;
+    optional bool platform_mac = 3;
+    optional bool platform_linux = 4;
+    optional bool vr_content = 5;
+    optional bool adult_content_violence = 6;
+    optional bool adult_content_sex = 7;
+    optional uint32 timestamp_updated = 8;
+    repeated uint32 tagids_curated = 9;
+    repeated uint32 tagids_filtered = 10;
+    optional string website_title = 11;
+    optional string website_url = 12;
+    optional string discussion_url = 13;
+    optional bool show_broadcast = 14;
 }
 
 message CLocalizationToken {
-	optional uint32 language = 1;
-	optional string localized_string = 2;
+    optional uint32 language = 1;
+    optional string localized_string = 2;
 }
 
 message CClanEventUserNewsTuple {
