@@ -1,13 +1,16 @@
 package com.avenga.steamclient.model.steam.user;
 
 import com.avenga.steamclient.steam.client.steamuser.LogOnDetails;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Objects;
 
 @Getter
+@EqualsAndHashCode
 public class LogOnDetailsRecord {
     public static final long RECONNECT_TIMEOUT = 5000;
     private static final long LOG_ON_OVER_LIMIT_BLOCKED_TIME = 6;
@@ -26,6 +29,10 @@ public class LogOnDetailsRecord {
 
     public void blockFor(long milliseconds) {
         this.blockedTime = Instant.now().plusMillis(milliseconds);
+    }
+
+    public void blockFor(long time, TemporalUnit timeUnit) {
+        this.blockedTime = Instant.now().plus(time, timeUnit);
     }
 
     public boolean isBlocked() {

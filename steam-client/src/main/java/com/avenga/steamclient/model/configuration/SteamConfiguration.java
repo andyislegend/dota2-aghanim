@@ -18,7 +18,7 @@ public class SteamConfiguration {
     private final SteamConfigurationState state;
     private SmartCMServerProvider serverProvider;
 
-    SteamConfiguration(SteamConfigurationState state) {
+    public SteamConfiguration(SteamConfigurationState state) {
         this.state = state;
         this.serverProvider = new SmartCMServerProvider(this);
     }

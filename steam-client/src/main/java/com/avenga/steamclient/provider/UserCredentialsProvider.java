@@ -55,6 +55,11 @@ public class UserCredentialsProvider {
         }
     }
 
+    public void returnBlockedKey(LogOnDetailsRecord detailsRecord) {
+        credentialRecords.remove(detailsRecord);
+        bannedCredentialRecords.add(detailsRecord);
+    }
+
     public void stopResetBannedCredentialJob() {
         executor.shutdown();
     }

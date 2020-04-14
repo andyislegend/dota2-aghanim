@@ -212,7 +212,7 @@ public class SteamGameServerAsync extends ClientMessageHandler {
 
     private void setDefaultLogOnBody(ClientMessageProtobuf<CMsgClientLogon.Builder> logon) {
         int localIp = NetworkUtils.getIPAddress(client.getLocalIP());
-        logon.getBody().setObfustucatedPrivateIp(localIp ^ MsgClientLogon.ObfuscationMask);
+        logon.getBody().setDeprecatedObfustucatedPrivateIp(localIp ^ MsgClientLogon.ObfuscationMask);
         logon.getBody().setProtocolVersion(MsgClientLogon.CurrentProtocol);
         logon.getBody().setClientOsType(Utils.getOSType().code());
         logon.getBody().setMachineId(ByteString.copyFrom(HardwareUtils.getMachineID()));
@@ -229,7 +229,7 @@ public class SteamGameServerAsync extends ClientMessageHandler {
         status.getBody().setGameVersion(details.getVersion());
 
         if (details.getAddress() != null) {
-            status.getBody().setGameIpAddress(NetworkUtils.getIPAddress(details.getAddress()));
+            status.getBody().setDeprecatedGameIpAddress(NetworkUtils.getIPAddress(details.getAddress()));
         }
 
         return status;

@@ -43,7 +43,7 @@ public class LoggedOnCallback extends BaseCallbackMessage {
         extendedResult = EResult.from(response.getEresultExtended());
         outOfGameSecsPerHeartbeat = response.getOutOfGameHeartbeatSeconds();
         inGameSecsPerHeartbeat = response.getInGameHeartbeatSeconds();
-        publicIP = NetworkUtils.getIPAddress(response.getPublicIp());
+        publicIP = NetworkUtils.getIPAddress(response.getDeprecatedPublicIp());
         serverTime = Instant.ofEpochMilli(response.getRtime32ServerTime() * 1000L);
         accountFlags = EAccountFlags.from(response.getAccountFlags());
         clientSteamID = new SteamID(response.getClientSuppliedSteamid());

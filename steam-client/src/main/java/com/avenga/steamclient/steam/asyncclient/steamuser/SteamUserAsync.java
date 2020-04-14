@@ -169,10 +169,10 @@ public class SteamUserAsync extends ClientMessageHandler {
 
     private void setSessionData(ClientMessageProtobuf<SteammessagesClientserverLogin.CMsgClientLogon.Builder> logon, LogOnDetails logOnDetails) {
         if (logOnDetails.getLoginID() != null) {
-            logon.getBody().setObfustucatedPrivateIp(logOnDetails.getLoginID());
+            logon.getBody().setDeprecatedObfustucatedPrivateIp(logOnDetails.getLoginID());
         } else {
             int localIp = NetworkUtils.getIPAddress(client.getLocalIP());
-            logon.getBody().setObfustucatedPrivateIp(localIp ^ MsgClientLogon.ObfuscationMask);
+            logon.getBody().setDeprecatedObfustucatedPrivateIp(localIp ^ MsgClientLogon.ObfuscationMask);
         }
         logon.getProtoHeader().setClientSessionid(0);
         logon.getBody().setShouldRememberPassword(logOnDetails.isShouldRememberPassword());

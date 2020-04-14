@@ -8,6 +8,13 @@ option java_package = "com.avenga.steamclient.protobufs.steamclient";
 option optimize_for = SPEED;
 option cc_generic_services = false;
 
+enum EMMSLobbyStatus {
+	k_EMMSLobbyStatusInvalid = 0;
+	k_EMMSLobbyStatusExists = 1;
+	k_EMMSLobbyStatusDoesNotExist = 2;
+	k_EMMSLobbyStatusNotAMember = 3;
+}
+
 message CMsgClientUDSP2PSessionStarted {
 	optional fixed64 steamid_remote = 1;
 	optional int32 appid = 2;
@@ -80,6 +87,14 @@ message CMsgClientNetworkingCertReply {
 	optional bytes ca_signature = 6;
 }
 
+message CMsgClientNetworkingMobileCertRequest {
+	optional uint32 app_id = 1;
+}
+
+message CMsgClientNetworkingMobileCertReply {
+	optional string encoded_cert = 1;
+}
+
 message CMsgClientGetAppOwnershipTicket {
 	optional uint32 app_id = 1;
 }
@@ -102,7 +117,7 @@ message CMsgClientGameConnectTokens {
 message CMsgGSServerType {
 	optional uint32 app_id_served = 1;
 	optional uint32 flags = 2;
-	optional uint32 game_ip_address = 3;
+	optional uint32 deprecated_game_ip_address = 3;
 	optional uint32 game_port = 4;
 	optional string game_dir = 5;
 	optional string game_version = 6;
@@ -116,8 +131,9 @@ message CMsgGSStatusReply {
 message CMsgGSPlayerList {
 	message Player {
 		optional uint64 steam_id = 1;
-		optional uint32 public_ip = 2;
+		optional uint32 deprecated_public_ip = 2;
 		optional bytes token = 3;
+		optional .CMsgIPAddress public_ip = 4;
 	}
 
 	repeated .CMsgGSPlayerList.Player players = 1;
@@ -125,8 +141,9 @@ message CMsgGSPlayerList {
 
 message CMsgGSUserPlaying {
 	optional fixed64 steam_id = 1;
-	optional uint32 public_ip = 2;
+	optional uint32 deprecated_public_ip = 2;
 	optional bytes token = 3;
+	optional .CMsgIPAddress public_ip = 4;
 }
 
 message CMsgGSDisconnectNotice {
@@ -137,7 +154,7 @@ message CMsgClientGamesPlayed {
 	message GamePlayed {
 		optional uint64 steam_id_gs = 1;
 		optional fixed64 game_id = 2;
-		optional uint32 game_ip_address = 3;
+		optional uint32 deprecated_game_ip_address = 3;
 		optional uint32 game_port = 4;
 		optional bool is_secure = 5;
 		optional bytes token = 6;
@@ -156,10 +173,14 @@ message CMsgClientGamesPlayed {
 		optional uint32 total_non_steam_controller_count = 19 [default = 0];
 		optional uint64 controller_workshop_file_id = 20 [default = 0];
 		optional uint32 launch_source = 21 [default = 0];
+		optional uint32 vr_hmd_runtime = 22;
+		optional .CMsgIPAddress game_ip_address = 23;
+		optional uint32 controller_connection_type = 24 [default = 0];
 	}
 
 	repeated .CMsgClientGamesPlayed.GamePlayed games_played = 1;
 	optional uint32 client_os_type = 2;
+	optional uint32 cloud_gaming_platform = 3;
 }
 
 message CMsgGSApprove {
@@ -211,6 +232,7 @@ message CMsgClientLicenseList {
 		optional uint32 initial_time_unit = 14;
 		optional uint32 renewal_period = 15;
 		optional uint32 renewal_time_unit = 16;
+		optional uint64 access_token = 17;
 	}
 
 	optional int32 eresult = 1 [default = 2];
@@ -300,16 +322,6 @@ message CMsgClientIsLimitedAccount {
 	optional bool bis_limited_account_allowed_to_invite_friends = 4;
 }
 
-message CMsgClientServerList {
-	message Server {
-		optional uint32 server_type = 1;
-		optional uint32 server_ip = 2;
-		optional uint32 server_port = 3;
-	}
-
-	repeated .CMsgClientServerList.Server servers = 1;
-}
-
 message CMsgClientRequestedClientStats {
 	message StatsToSend {
 		optional uint32 client_stat = 1;
@@ -332,15 +344,23 @@ message CMsgClientStat2 {
 	repeated .CMsgClientStat2.StatDetail stat_detail = 1;
 }
 
+message CMsgClientMMSSetRatelimitPolicyOnClient {
+	optional uint32 app_id = 1;
+	optional bool enable_rate_limits = 2;
+	optional int32 seconds_per_message = 3;
+	optional int32 milliseconds_per_data_update = 4;
+}
+
 message CMsgClientMMSCreateLobby {
 	optional uint32 app_id = 1;
 	optional int32 max_members = 2;
 	optional int32 lobby_type = 3;
 	optional int32 lobby_flags = 4;
 	optional uint32 cell_id = 5;
-	optional uint32 public_ip = 6;
+	optional uint32 deprecated_public_ip = 6;
 	optional bytes metadata = 7;
 	optional string persona_name_owner = 8;
+	optional .CMsgIPAddress public_ip = 9;
 }
 
 message CMsgClientMMSCreateLobbyResponse {
@@ -395,8 +415,9 @@ message CMsgClientMMSGetLobbyList {
 	optional uint32 app_id = 1;
 	optional int32 num_lobbies_requested = 3;
 	optional uint32 cell_id = 4;
-	optional uint32 public_ip = 5;
+	optional uint32 deprecated_public_ip = 5;
 	repeated .CMsgClientMMSGetLobbyList.Filter filters = 6;
+	optional .CMsgIPAddress public_ip = 7;
 }
 
 message CMsgClientMMSGetLobbyListResponse {
@@ -454,6 +475,7 @@ message CMsgClientMMSLobbyData {
 	optional bytes metadata = 8;
 	repeated .CMsgClientMMSLobbyData.Member members = 9;
 	optional uint32 lobby_cellid = 10;
+	optional bool owner_should_accept_changes = 11;
 }
 
 message CMsgClientMMSSendLobbyChatMsg {
@@ -491,17 +513,19 @@ message CMsgClientMMSSetLobbyLinked {
 message CMsgClientMMSSetLobbyGameServer {
 	optional uint32 app_id = 1;
 	optional fixed64 steam_id_lobby = 2;
-	optional uint32 game_server_ip = 3;
+	optional uint32 deprecated_game_server_ip = 3;
 	optional uint32 game_server_port = 4;
 	optional fixed64 game_server_steam_id = 5;
+	optional .CMsgIPAddress game_server_ip = 6;
 }
 
 message CMsgClientMMSLobbyGameServerSet {
 	optional uint32 app_id = 1;
 	optional fixed64 steam_id_lobby = 2;
-	optional uint32 game_server_ip = 3;
+	optional uint32 deprecated_game_server_ip = 3;
 	optional uint32 game_server_port = 4;
 	optional fixed64 game_server_steam_id = 5;
+	optional .CMsgIPAddress game_server_ip = 6;
 }
 
 message CMsgClientMMSUserJoinedLobby {
@@ -524,10 +548,24 @@ message CMsgClientMMSInviteToLobby {
 	optional fixed64 steam_id_user_invited = 3;
 }
 
+message CMsgClientMMSGetLobbyStatus {
+	optional uint32 app_id = 1;
+	optional fixed64 steam_id_lobby = 2;
+	optional bool claim_membership = 3;
+	optional bool claim_ownership = 4;
+}
+
+message CMsgClientMMSGetLobbyStatusResponse {
+	optional uint32 app_id = 1;
+	optional fixed64 steam_id_lobby = 2;
+	optional .EMMSLobbyStatus lobby_status = 3 [default = k_EMMSLobbyStatusInvalid];
+}
+
 message CMsgClientInviteToGame {
 	optional fixed64 steam_id_dest = 1;
 	optional fixed64 steam_id_src = 2;
 	optional string connect_string = 3;
+	optional string remote_play = 4;
 }
 
 message CMsgClientChatInvite {
@@ -837,6 +875,7 @@ message CMsgClientUFSGetFileListForApp {
 message CMsgClientUFSGetFileListForAppResponse {
 	option (msgpool_soft_limit) = 8;
 	option (msgpool_hard_limit) = 16;
+
 	message File {
 		optional uint32 app_id = 1;
 		optional string file_name = 2;
@@ -927,8 +966,8 @@ message CMsgClientAppInfoRequest {
 }
 
 message CMsgClientAppInfoResponse {
-	option (msgpool_soft_limit) = 0;
 	option (msgpool_hard_limit) = 0;
+
 	message App {
 		message Section {
 			optional uint32 section_id = 1;
@@ -1012,8 +1051,8 @@ message CMsgClientPICSProductInfoRequest {
 }
 
 message CMsgClientPICSProductInfoResponse {
-	option (msgpool_soft_limit) = 0;
 	option (msgpool_hard_limit) = 0;
+
 	message AppInfo {
 		optional uint32 appid = 1;
 		optional uint32 change_number = 2;
@@ -1179,4 +1218,9 @@ message CMsgClientClanState {
 message CMsgClientUnsignedInstallScript {
 	optional uint32 app_id = 1;
 	optional string file_name = 2;
+	optional uint32 file_size = 3;
+	optional bool signature_broken = 4;
+	optional uint32 depot_id = 5;
+	optional uint64 manifest_id = 6;
+	optional uint32 file_flags = 7;
 }

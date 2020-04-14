@@ -116,6 +116,7 @@ public class DotaClient extends ClientGCHandler {
         var matchRequestMessage = new ClientGCProtobufMessage<CMsgGCMatchDetailsRequest.Builder>(CMsgGCMatchDetailsRequest.class,
                 k_EMsgGCMatchDetailsRequest.getNumber());
         matchRequestMessage.getBody().setMatchId(matchId);
+        matchRequestMessage.getHeader().getProto().setJobidSource(getClient().getNextJobID().getValue());
         gameCoordinator.send(matchRequestMessage, applicationId, k_EMsgGCMatchDetailsRequest);
     }
 
@@ -123,6 +124,7 @@ public class DotaClient extends ClientGCHandler {
         var profileCardMessage = new ClientGCProtobufMessage<CMsgClientToGCGetProfileCard.Builder>(CMsgClientToGCGetProfileCard.class,
                 k_EMsgClientToGCGetProfileCard.getNumber());
         profileCardMessage.getBody().setAccountId(accountId);
+        profileCardMessage.getHeader().getProto().setJobidSource(getClient().getNextJobID().getValue());
         gameCoordinator.send(profileCardMessage, applicationId, k_EMsgClientToGCGetProfileCard);
     }
 }

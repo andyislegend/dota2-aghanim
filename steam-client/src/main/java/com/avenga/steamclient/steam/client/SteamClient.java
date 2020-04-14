@@ -34,9 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -103,6 +105,7 @@ public class SteamClient extends CMClient {
     private LogOnDetailsRecord currentLoggedUser;
     private boolean connectingInProgress;
     private Instant processStartTime;
+    private final AtomicLong jobSequence = new AtomicLong(DEFAULT_SEQUENCE_VALUE);
 
     /**
      * Initializes a new instance of the {@link SteamClient} class with the default configuration.
@@ -242,6 +245,7 @@ public class SteamClient extends CMClient {
     public void disconnect() {
         super.disconnect();
         queueSequence.set(DEFAULT_SEQUENCE_VALUE);
+        jobSequence.set(DEFAULT_SEQUENCE_VALUE);
         queueSequence.getAndIncrement();
     }
 
@@ -314,10 +318,39 @@ public class SteamClient extends CMClient {
         JobID jobID = new JobID();
         jobID.setBoxID(DEFAULT_SEQUENCE_VALUE);
         jobID.setProcessID(DEFAULT_SEQUENCE_VALUE);
-        jobID.setSequentialCount(queueSequence.incrementAndGet());
+        jobID.setSequentialCount(jobSequence.incrementAndGet());
         jobID.setStartTime(processStartTime);
 
         return jobID;
+    }
+
+    /**
+     * Blocks current logged user for provided time period. User won't be provided from {@link UserCredentialsProvider}
+     * during blocked time period.
+     * <p>
+     * This method used when user will open connection using {@link #connectAndLogin()} method.
+     *
+     * @param time during which user can't be used by {@link UserCredentialsProvider}.
+     * @param timeUnit units of the provided time.
+     */
+    public void blockCurrentLoggedUser(long time, TemporalUnit timeUnit) {
+        currentLoggedUser.blockFor(time, timeUnit);
+        credentialsProvider.returnBlockedKey(currentLoggedUser);
+    }
+
+    /**
+     * Blocks current logged user for provided time period and intiate reconnection of the Steam client with next user
+     * provided by {@link UserCredentialsProvider}.
+     * <p>
+     * This method used when user will open connection using {@link #connectAndLogin()} method.
+     *
+     * @param time during which user can't be used by {@link UserCredentialsProvider}.
+     * @param timeUnit units of the provided time.
+     */
+    public void blockLoggedUserAndInitReconnect(long time, TemporalUnit timeUnit) {
+        blockCurrentLoggedUser(time, timeUnit);
+        reconnectOnUserInitiated = true;
+        disconnect();
     }
 
     /**

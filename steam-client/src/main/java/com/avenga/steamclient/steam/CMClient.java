@@ -83,7 +83,6 @@ public class CMClient {
                 Multi, new MultiClientPacketHandler(),
                 ClientLogOnResponse, new LogOnClientPacketHandler(),
                 ClientLoggedOff, new LoggedOffClientPacketHandler(),
-                ClientServerList, new ServerListClientPacketHandler(),
                 ClientCMList, new CMListClientPacketHandler(),
                 ClientSessionToken, new SessionTokenClientPacketHandler(),
                 ClientNewLoginKey, new UserNewLoginKeyClientPacketHandler()
