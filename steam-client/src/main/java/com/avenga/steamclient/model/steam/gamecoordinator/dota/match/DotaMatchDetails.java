@@ -10,6 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DotaMatchDetails {
+    private String result;
     private int duration;
     private int startTime;
     private long matchId;

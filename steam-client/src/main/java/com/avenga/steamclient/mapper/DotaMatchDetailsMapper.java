@@ -1,5 +1,6 @@
 package com.avenga.steamclient.mapper;
 
+import com.avenga.steamclient.enums.EResult;
 import com.avenga.steamclient.model.steam.gamecoordinator.dota.match.*;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesClient.CMsgGCMatchDetailsResponse;
 import com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon;
@@ -15,6 +16,7 @@ public class DotaMatchDetailsMapper {
     public static DotaMatchDetails mapFromProto(CMsgGCMatchDetailsResponse.Builder builder) {
         var match = builder.getMatch();
         return DotaMatchDetails.builder()
+                .result(EResult.from(builder.getResult()).name())
                 .duration(match.getDuration())
                 .startTime(match.getStartTime())
                 .matchId(match.getMatchId())

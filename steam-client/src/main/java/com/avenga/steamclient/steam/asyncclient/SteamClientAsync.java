@@ -7,13 +7,11 @@ import com.avenga.steamclient.model.JobID;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.steam.ClientMessageHandler;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CMsgClientCMList;
-import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserver.CMsgClientServerList;
 import com.avenga.steamclient.steam.CMClient;
 import com.avenga.steamclient.steam.asyncclient.callbackmanager.CallbackMessage;
 import com.avenga.steamclient.steam.asyncclient.callbacks.CMListCallback;
 import com.avenga.steamclient.steam.asyncclient.callbacks.ConnectedCallback;
 import com.avenga.steamclient.steam.asyncclient.callbacks.DisconnectedCallback;
-import com.avenga.steamclient.steam.asyncclient.callbacks.ServerListCallback;
 import com.avenga.steamclient.steam.asyncclient.steamgamecoordinator.SteamGameCoordinatorAsync;
 import com.avenga.steamclient.steam.asyncclient.steamgameserver.SteamGameServerAsync;
 import com.avenga.steamclient.steam.asyncclient.steamuser.SteamUserAsync;
@@ -61,7 +59,6 @@ public class SteamClientAsync extends CMClient {
         processStartTime = Instant.now();
 
         clientHandlers.put(EMsg.ClientCMList, this::handleCMList);
-        clientHandlers.put(EMsg.ClientServerList, this::handleServerList);
 
         addHandler(new SteamUserAsync());
         addHandler(new SteamGameServerAsync());
@@ -264,11 +261,4 @@ public class SteamClientAsync extends CMClient {
 
         postCallback(new CMListCallback(cmMsg.getBody()));
     }
-
-    private void handleServerList(PacketMessage packetMessage) {
-        ClientMessageProtobuf<CMsgClientServerList.Builder> listMsg = new ClientMessageProtobuf<>(CMsgClientServerList.class, packetMessage);
-
-        postCallback(new ServerListCallback(listMsg.getBody()));
-    }
-
 }

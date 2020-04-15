@@ -62,6 +62,7 @@ public class SteamGameServer extends ClientHandler {
         applicationIds.forEach(applicationId -> {
             var gamePlayed = CMsgClientGamesPlayed.GamePlayed.newBuilder()
                     .setGameId(applicationId)
+                    .setOwnerId((int) client.getSteamID().getAccountID())
                     .build();
             gamePlayedMessage.getBody().addGamesPlayed(gamePlayed);
         });
