@@ -22,13 +22,8 @@ public class DotaProfileCard {
     private int rankTierScore;
     private int previousRankTier;
     private int rankTierMmrType;
-    private int rankTierCore;
-    private int rankTierCoreScore;
     private int leaderboardRankCore;
-    private int rankTierSupport;
-    private int rankTierSupportScore;
     private int leaderboardRankSupport;
-    private int rankTierCorePeak;
-    private int rankTierSupportPeak;
+    private int rankTierPeak;
     private DotaBattleCupVictory recentBattleCupVictory;
 }

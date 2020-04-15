@@ -24,14 +24,8 @@ public class DotaAccountProfileCardMapper {
                 .rankTierScore(builder.getRankTierScore())
                 .previousRankTier(builder.getPreviousRankTier())
                 .rankTierMmrType(builder.getRankTierMmrType())
-                .rankTierCore(builder.getRankTierCore())
-                .rankTierCoreScore(builder.getRankTierCoreScore())
                 .leaderboardRankCore(builder.getLeaderboardRankCore())
-                .rankTierSupport(builder.getRankTierSupport())
-                .rankTierSupportScore(builder.getRankTierSupportScore())
-                .leaderboardRankSupport(builder.getLeaderboardRankSupport())
-                .rankTierCorePeak(builder.getRankTierCorePeak())
-                .rankTierSupportPeak(builder.getRankTierSupportPeak())
+                .rankTierPeak(builder.getRankTierPeak())
                 .recentBattleCupVictory(getCupVictory(builder.getRecentBattleCupVictory()))
                 .build();
     }

@@ -14,6 +14,7 @@ import com.avenga.steamclient.steam.client.SteamClient;
 import com.avenga.steamclient.steam.client.steamgamecoordinator.callback.GCHelloCallbackHandler;
 import com.avenga.steamclient.steam.client.steamgamecoordinator.dota.DotaClient;
 import com.avenga.steamclient.util.MessageUtil;
+import com.avenga.steamclient.util.Utils;
 import com.avenga.steamclient.util.retry.RetryHandlerUtil;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ProtocolMessageEnum;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.avenga.steamclient.protobufs.dota.DotaGCMessagesCommon.EDOTAGCSessionNeed.k_EDOTAGCSessionNeed_UserInUINeverConnected_VALUE;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientHello;
 import static com.avenga.steamclient.protobufs.tf.GCSystemMessages.EGCBaseClientMsg.k_EMsgGCClientWelcome;
 
@@ -76,6 +78,8 @@ public class SteamGameCoordinator extends ClientHandler {
         var gcSessionCallback = getClient().addGCCallbackToQueue(k_EMsgGCClientWelcome.getNumber(), applicationId);
         var clientHelloMessage = new ClientGCProtobufMessage<CMsgClientHello.Builder>(CMsgClientHello.class, k_EMsgGCClientHello.getNumber());
         clientHelloMessage.getBody().setEngine(sourceEngine);
+        clientHelloMessage.getBody().setClientSessionNeed(k_EDOTAGCSessionNeed_UserInUINeverConnected_VALUE);
+        clientHelloMessage.getBody().setOsType(Utils.getOSType().code());
 
         RetryHandlerUtil.getOrRetry(() -> {
             send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
