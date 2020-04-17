@@ -38,9 +38,15 @@ public abstract class Connection {
         }
     }
 
-    void onDisconnected(boolean e) {
+    void onDisconnected(boolean userInitiated) {
         if (disconnected != null) {
-            disconnected.handleEvent(this, new DisconnectedEventArgs(e));
+            disconnected.handleEvent(this, new DisconnectedEventArgs(userInitiated));
+        }
+    }
+
+    void onDisconnected(boolean userInitiated, boolean isConnectionFailure) {
+        if (disconnected != null) {
+            disconnected.handleEvent(this, new DisconnectedEventArgs(userInitiated, isConnectionFailure));
         }
     }
 
