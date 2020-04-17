@@ -14,7 +14,8 @@ public class ProxyState {
         this.proxy = proxy;
     }
 
-    public void incrementFailureCount() {
-        connectionFailureCount.incrementAndGet();
+    public synchronized void incrementFailureCount() {
+        var currentValue = connectionFailureCount.get();
+        connectionFailureCount.compareAndSet(currentValue, currentValue + 1);
     }
 }
