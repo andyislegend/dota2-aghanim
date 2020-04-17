@@ -391,9 +391,9 @@ public class CMClient {
         if (isConnectionFailure && Objects.nonNull(currentProxyState)) {
             currentProxyState.incrementFailureCount();
             LOGGER.debug("Failure conunter for {} equels to {}", currentProxyState.getProxy(),
-                    currentProxyState.getConnectionFailureCount());
+                    currentProxyState.getConnectionFailureCount().get());
 
-            if (currentProxyState.getConnectionFailureCount() < maxConnectionFialureCount) {
+            if (currentProxyState.getConnectionFailureCount().get() < maxConnectionFialureCount) {
                 this.connectionProxies.offer(currentProxyState);
             }
         }
