@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
+import java.util.Objects;
 
 public class TcpConnection extends Connection {
 
@@ -29,7 +31,15 @@ public class TcpConnection extends Connection {
 
     private NetLoop netLoop;
 
+    private Proxy connectionProxy;
+
+    private boolean isConnectionFailure;
+
     private final Object netLock = new Object();
+
+    public TcpConnection(Proxy proxy) {
+        this.connectionProxy = proxy;
+    }
 
     private void shutdown() {
         try {
@@ -67,6 +77,7 @@ public class TcpConnection extends Connection {
             onConnected();
         } catch (IOException e) {
             LOGGER.debug("Exception while setting up connection to " + currentEndPoint, e);
+            isConnectionFailure = true;
             release(false);
         }
     }
@@ -98,7 +109,7 @@ public class TcpConnection extends Connection {
             }
         }
 
-        onDisconnected(userRequestedDisconnect);
+        onDisconnected(userRequestedDisconnect, isConnectionFailure);
     }
 
     @Override
@@ -107,12 +118,13 @@ public class TcpConnection extends Connection {
             currentEndPoint = endPoint;
             try {
                 LOGGER.debug("Connecting to " + currentEndPoint + "...");
-                socket = new Socket();
+                socket = getSocket();
                 socket.connect(endPoint, timeout);
 
                 connectionCompleted(true);
             } catch (IOException e) {
                 LOGGER.debug("Socket exception while completing connection request to " + currentEndPoint, e);
+                isConnectionFailure = true;
                 connectionCompleted(false);
             }
         }
@@ -238,5 +250,9 @@ public class TcpConnection extends Connection {
             }
             release(cancelRequested && userRequested);
         }
+    }
+
+    private Socket getSocket() {
+        return Objects.isNull(connectionProxy) ? new Socket() : new Socket(connectionProxy);
     }
 }

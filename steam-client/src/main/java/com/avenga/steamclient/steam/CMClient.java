@@ -7,6 +7,7 @@ import com.avenga.steamclient.event.EventHandler;
 import com.avenga.steamclient.model.SteamID;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
 import com.avenga.steamclient.model.discovery.ServerRecord;
+import com.avenga.steamclient.model.proxy.ProxyState;
 import com.avenga.steamclient.network.*;
 import com.avenga.steamclient.protobufs.steamclient.SteammessagesClientserverLogin.CMsgClientHeartBeat;
 import com.avenga.steamclient.provider.SmartCMServerProvider;
@@ -23,8 +24,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +60,19 @@ public class CMClient {
 
     private Connection connection;
 
+    private ConcurrentLinkedQueue<ProxyState> connectionProxies = new ConcurrentLinkedQueue<>();
+
+    private ProxyState currentProxyState;
+
+    @Setter
+    @Getter
+    /**
+     * Set max unsuccessful amount of attemps to open connection using proxy from provided proxy list of the
+     * {@link #registerConnectionProxies(List)} method. After max count of attemps will be reached, proxy connection
+     * will be removed from connection proxy queue.
+     */
+    private int maxConnectionFialureCount = 5;
+
     /**
      * Use this for debugging only. For your convenience, you can use {@link PacketDebugNetworkListener} class.
      */
@@ -87,6 +103,21 @@ public class CMClient {
                 ClientSessionToken, new SessionTokenClientPacketHandler(),
                 ClientNewLoginKey, new UserNewLoginKeyClientPacketHandler()
         );
+    }
+
+    /**
+     * Register connection proxies. They will be used to open TCP or WebSocket connection. Some of the Steam Network
+     * services could have request limits by IP. This limitation could be overcome by proxy connection.
+     *
+     * @param proxies list of the connection proxies.
+     */
+    public void registerConnectionProxies(List<Proxy> proxies) {
+        Objects.requireNonNull(proxies, "Connections Proxy list wasn't provided.");
+        connectionProxies.clear();
+        proxies.stream()
+                .filter(Objects::nonNull)
+                .map(ProxyState::new)
+                .forEach(connectionProxies::offer);
     }
 
     /**
@@ -273,14 +304,17 @@ public class CMClient {
      * Called when the client is securely isConnected to Steam3.
      */
     protected void onClientConnected() {
-
+        checkAndReturnProxyToQueue();
     }
 
     private Connection createConnection(EnumSet<ProtocolType> protocol) {
+        var currentProxy = getCurrentProxy();
+        LOGGER.debug("Current proxy configuration: {}", currentProxy);
+
         if (protocol.contains(ProtocolType.WEB_SOCKET)) {
-            return new WebSocketConnection();
+            return new WebSocketConnection(currentProxy);
         } else if (protocol.contains(ProtocolType.TCP)) {
-            return new EnvelopeEncryptedConnection(new TcpConnection(), getUniverse());
+            return new EnvelopeEncryptedConnection(new TcpConnection(currentProxy), getUniverse());
         } else if (protocol.contains(ProtocolType.UDP)) {
             return new EnvelopeEncryptedConnection(new UdpConnection(), getUniverse());
         }
@@ -315,6 +349,8 @@ public class CMClient {
 
         heartBeatFunction.stop();
 
+        incrementCounterWhenConnectionFailure(disconnectedEventArgs.isConnectionFailure());
+
         onClientDisconnected(disconnectedEventArgs.isUserInitiated() || expectDisconnection);
 
         if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
@@ -336,6 +372,30 @@ public class CMClient {
                 LOGGER.debug("Disconnect callback was interupted", e);
             }
             disconnectCallback = null;
+        }
+    }
+
+    private Proxy getCurrentProxy() {
+        this.currentProxyState = connectionProxies.poll();
+        return Objects.isNull(currentProxyState) ? Proxy.NO_PROXY : currentProxyState.getProxy();
+    }
+
+    private void checkAndReturnProxyToQueue() {
+        if (Objects.nonNull(currentProxyState)) {
+            LOGGER.debug("Return to connection proxy queue: " + currentProxyState.getProxy());
+            this.connectionProxies.offer(currentProxyState);
+        }
+    }
+
+    private void incrementCounterWhenConnectionFailure(boolean isConnectionFailure) {
+        if (isConnectionFailure && Objects.nonNull(currentProxyState)) {
+            currentProxyState.incrementFailureCount();
+            LOGGER.debug("Failure conunter for {} equels to {}", currentProxyState.getProxy(),
+                    currentProxyState.getConnectionFailureCount().get());
+
+            if (currentProxyState.getConnectionFailureCount().get() < maxConnectionFialureCount) {
+                this.connectionProxies.offer(currentProxyState);
+            }
         }
     }
 }

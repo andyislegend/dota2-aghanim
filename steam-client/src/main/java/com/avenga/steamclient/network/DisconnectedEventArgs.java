@@ -9,4 +9,9 @@ import lombok.Getter;
 public class DisconnectedEventArgs extends EventArgs {
 
     private boolean userInitiated;
+    private boolean isConnectionFailure;
+
+    public DisconnectedEventArgs(boolean userInitiated) {
+        this.userInitiated = userInitiated;
+    }
 }

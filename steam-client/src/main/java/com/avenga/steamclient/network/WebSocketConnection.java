@@ -4,9 +4,12 @@ import com.avenga.steamclient.enums.ProtocolType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URI;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -18,6 +21,14 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
 
     private AtomicBoolean userInitiated = new AtomicBoolean();
 
+    private Proxy connectionProxy;
+
+    private boolean isConnectionFailure;
+
+    public WebSocketConnection(Proxy proxy) {
+        this.connectionProxy = proxy;
+    }
+
     @Override
     public void connect(InetSocketAddress endPoint, int timeout) {
         LOGGER.debug("Connecting to " + endPoint + "...");
@@ -28,6 +39,7 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
             oldClient.close();
         }
 
+        initConnnectionProxy(newClient);
         newClient.connect();
     }
 
@@ -83,17 +95,26 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
 
     @Override
     public void onClose(boolean remote) {
-        onDisconnected(userInitiated.get() && !remote);
+        onDisconnected(userInitiated.get() && !remote, isConnectionFailure);
     }
 
     @Override
     public void onError(Exception ex) {
         LOGGER.debug("error in websocket", ex);
+        if (ex instanceof IOException) {
+            this.isConnectionFailure = true;
+        }
     }
 
     @Override
     public void onOpen() {
         LOGGER.debug("Connected to " + getCurrentEndPoint());
         onConnected();
+    }
+
+    private void initConnnectionProxy(WebSocketCMClient client) {
+        if (Objects.nonNull(connectionProxy)) {
+            client.setProxy(connectionProxy);
+        }
     }
 }
