@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 public class ProxyState {
     private Proxy proxy;
-    private AtomicInteger connectionFailureCount;
+    private AtomicInteger connectionFailureCount = new AtomicInteger();
 
     public ProxyState(Proxy proxy) {
         this.proxy = proxy;
