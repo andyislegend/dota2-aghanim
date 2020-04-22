@@ -3,6 +3,7 @@ package com.avenga.steamclient.steam.client.steamuser;
 import com.avenga.steamclient.enums.EOSType;
 import com.avenga.steamclient.model.SteamID;
 import com.avenga.steamclient.util.Utils;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@EqualsAndHashCode
 public class LogOnDetails {
 
     private String username = "";

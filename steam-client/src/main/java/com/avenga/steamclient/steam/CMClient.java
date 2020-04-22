@@ -335,7 +335,7 @@ public class CMClient {
     private final EventHandler<DisconnectedEventArgs> disconnected = (sender, disconnectedEventArgs) -> {
         isConnected = false;
 
-        if (!disconnectedEventArgs.isUserInitiated() && !expectDisconnection) {
+        if (!disconnectedEventArgs.isUserInitiated() && !expectDisconnection && !disconnectedEventArgs.isConnectionFailure()) {
             getServers().tryMark(connection.getCurrentEndPoint(), connection.getProtocolTypes(), ServerQuality.BAD);
         }
 
@@ -355,7 +355,6 @@ public class CMClient {
 
         if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
             var completeResult = disconnectCallback.complete(true);
-            LOGGER.debug("Is disconnect callback completed: {}", completeResult);
         }
     };
 

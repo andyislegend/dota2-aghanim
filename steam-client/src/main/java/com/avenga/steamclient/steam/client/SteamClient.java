@@ -309,6 +309,16 @@ public class SteamClient extends CMClient {
     }
 
     /**
+     * Provides username of the current logged user to the Steam Network.
+     * Username will be available if user will open connection using {@link #connectAndLogin()} method.
+     *
+     * @return username of the current logged provided by {@link UserCredentialsProvider} or empty string.
+     */
+    public String getCurrentLoggedUsername() {
+        return Objects.nonNull(currentLoggedUser) ? currentLoggedUser.getLogOnDetails().getUsername() : "";
+    }
+
+    /**
      * Returns the next available JobID for job based messages.
      * JobID is used for specific Steam Network message with inner messages. e.g. {@link EMsg#ServiceMethodCallFromClient}
      *
@@ -490,8 +500,8 @@ public class SteamClient extends CMClient {
         Optional<UserLogOnResponse> logOnResponse = Optional.empty();
 
         do {
-            openConnection();
             currentLoggedUser = credentialsProvider.getNext();
+            openConnection();
             try {
                 logOnResponse = steamUser.logOn(currentLoggedUser.getLogOnDetails(), DEFAULT_RECONECT_TIMEOUT);
             } catch (CallbackTimeoutException e) {
@@ -505,9 +515,9 @@ public class SteamClient extends CMClient {
             credentialsProvider.returnKey(currentLoggedUser);
         } while (!logOnResponse.isPresent() || logOnResponse.get().getResult() != EResult.OK);
 
-        LOGGER.debug("Successfully loged on with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
         checkAndRunAutoReconnectCallback();
         isAutoReconnectInProgress = false;
+        LOGGER.debug("Connection was successfully established with user: {}", currentLoggedUser.getLogOnDetails().getUsername());
 
         return logOnResponse.get();
     }
@@ -558,7 +568,9 @@ public class SteamClient extends CMClient {
                         currentLoggedUser.getLogOnDetails().getUsername());
                 break;
             default:
-                LOGGER.debug("LogOn response result: {}", logOnResult);
+                LOGGER.debug("User {} can't login to Steam Network.  LogOn response result: {}",
+                        currentLoggedUser.getLogOnDetails().getUsername(),
+                        logOnResult);
         }
     }
 
