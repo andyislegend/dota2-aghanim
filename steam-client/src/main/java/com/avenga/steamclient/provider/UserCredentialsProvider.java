@@ -36,7 +36,7 @@ public class UserCredentialsProvider {
         while (detailsRecord == null) {
             detailsRecord = credentialRecords.poll();
             if (detailsRecord == null) {
-                LOGGER.info("Waiting for detailsRecord: {} second(s)", THREAD_SLEEP_TIME);
+                LOGGER.info("Waiting for user credentials: {} second(s)", THREAD_SLEEP_TIME);
                 try {
                     TimeUnit.SECONDS.sleep(THREAD_SLEEP_TIME);
                 } catch (InterruptedException e) {
@@ -49,6 +49,7 @@ public class UserCredentialsProvider {
 
     public void returnKey(LogOnDetailsRecord detailsRecord) {
         if (detailsRecord.isBlocked() || detailsRecord.isPermanentlyBlocked()) {
+            LOGGER.debug("User {} was banned until: {}", detailsRecord.getLogOnDetails().getUsername(), detailsRecord.getBlockedTime());
             bannedCredentialRecords.add(detailsRecord);
         } else {
             credentialRecords.add(detailsRecord);
@@ -56,6 +57,7 @@ public class UserCredentialsProvider {
     }
 
     public void returnBlockedKey(LogOnDetailsRecord detailsRecord) {
+        LOGGER.debug("User {} was banned until: {}", detailsRecord.getLogOnDetails().getUsername(), detailsRecord.getBlockedTime());
         credentialRecords.remove(detailsRecord);
         bannedCredentialRecords.add(detailsRecord);
     }
@@ -73,15 +75,22 @@ public class UserCredentialsProvider {
     }
 
     private void resetBannedUserCredentials() {
-        executor.scheduleAtFixedRate(() -> {
-            var currentTime = Instant.now();
-            bannedCredentialRecords.forEach(record -> {
-                if (Objects.nonNull(record.getBlockedTime()) && currentTime.isAfter(record.getBlockedTime())) {
-                    record.resetBlockedTime();
-                    credentialRecords.add(record);
-                    bannedCredentialRecords.remove(record);
+        var scheduledFuture = executor.scheduleAtFixedRate(() -> {
+            try {
+                var currentTime = Instant.now();
+                var iterator = bannedCredentialRecords.listIterator();
+                while (iterator.hasNext()) {
+                    var record = iterator.next();
+                    if (Objects.nonNull(record.getBlockedTime()) && currentTime.isAfter(record.getBlockedTime())) {
+                        record.resetBlockedTime();
+                        credentialRecords.add(record);
+                        iterator.remove();
+                        LOGGER.debug("User {} was removed from banned list", record.getLogOnDetails().getUsername());
+                    }
                 }
-            });
+            } catch (Exception e) {
+                LOGGER.debug("Exception in user credentials schedular task: {}", e.getMessage(), e);
+            }
         }, THREAD_SLEEP_TIME, BANNED_TIME_CHECK_PERIOD, TimeUnit.SECONDS);
     }
 }

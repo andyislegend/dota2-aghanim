@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
+import java.net.*;
 import java.util.Objects;
 
 public class TcpConnection extends Connection {
@@ -77,7 +74,7 @@ public class TcpConnection extends Connection {
             onConnected();
         } catch (IOException e) {
             LOGGER.debug("Exception while setting up connection to " + currentEndPoint, e);
-            isConnectionFailure = true;
+            checkAndSetConnectionFailure(e);
             release(false);
         }
     }
@@ -124,7 +121,7 @@ public class TcpConnection extends Connection {
                 connectionCompleted(true);
             } catch (IOException e) {
                 LOGGER.debug("Socket exception while completing connection request to " + currentEndPoint, e);
-                isConnectionFailure = true;
+                checkAndSetConnectionFailure(e);
                 connectionCompleted(false);
             }
         }
@@ -254,5 +251,11 @@ public class TcpConnection extends Connection {
 
     private Socket getSocket() {
         return Objects.isNull(connectionProxy) ? new Socket() : new Socket(connectionProxy);
+    }
+
+    private void checkAndSetConnectionFailure(Exception exception) {
+        if (exception instanceof SocketException) {
+            this.isConnectionFailure = true;
+        }
     }
 }
