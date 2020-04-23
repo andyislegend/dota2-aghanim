@@ -64,8 +64,12 @@ public class CMClient {
 
     private ProxyState currentProxyState;
 
-    @Setter
-    @Getter
+    /**
+     * Provides Client name which will be used for prefixing logger messages to track logs one client
+     * from another in service logs, e.g. "CMClient: Sent -> ..."
+     */
+    protected String clientName;
+
     /**
      * Set max unsuccessful amount of attemps to open connection using proxy from provided proxy list of the
      * {@link #registerConnectionProxies(List)} method. After max count of attemps will be reached, proxy connection
@@ -86,10 +90,13 @@ public class CMClient {
 
     private CompletableFuture<Boolean> disconnectCallback;
 
-    public CMClient(SteamConfiguration configuration) {
+    public CMClient(SteamConfiguration configuration, String clientName) {
         Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
 
+        this.clientName = clientName;
         this.configuration = configuration;
+        this.configuration.setClientNameToServerProvider(clientName);
+
         this.serverMap = new HashMap<>();
         this.heartBeatFunction = new ScheduledFunction(() ->
                 send(new ClientMessageProtobuf<CMsgClientHeartBeat.Builder>(CMsgClientHeartBeat.class, EMsg.ClientHeartBeat)),
@@ -149,7 +156,7 @@ public class CMClient {
                 connection.getDisconnected().addEventHandler(disconnected);
                 connection.connect(cmServer.getEndpoint());
             } catch (Exception e) {
-                LOGGER.debug("Failed to connect to Steam network", e);
+                LOGGER.debug("{}: Failed to connect to Steam network {}", clientName, e.getMessage());
                 onClientDisconnected(false);
             }
         }
@@ -170,12 +177,12 @@ public class CMClient {
 
     public boolean onClientMsgReceived(PacketMessage packetMessage) {
         if (packetMessage == null) {
-            LOGGER.debug("Packet message failed to parse, shutting down connection");
+            LOGGER.debug("{}: Packet message failed to parse, shutting down connection", clientName);
             disconnect();
             return false;
         }
 
-        LOGGER.debug("<- Recv'd EMsg: {} ({}) (Proto: {})", packetMessage.getMessageType(),
+        LOGGER.debug("{}: <- Recv'd EMsg: {} ({}) (Proto: {})", clientName, packetMessage.getMessageType(),
                 packetMessage.getMessageType().code(), packetMessage.isProto());
 
         // Multi message gets logged down the line after it's decompressed
@@ -185,7 +192,7 @@ public class CMClient {
                     debugNetworkListener.onPacketMessageReceived(packetMessage.getMessageType(), packetMessage.getData());
                 }
             } catch (Exception e) {
-                LOGGER.debug("DebugNetworkListener threw an exception", e);
+                LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.getMessage());
             }
         }
 
@@ -215,14 +222,14 @@ public class CMClient {
             message.setSteamID(steamID);
         }
 
-        LOGGER.debug("Sent -> EMsg: {} (Proto: {})", message.getMsgType(), message.isProto());
+        LOGGER.debug("{}: Sent -> EMsg: {} (Proto: {})", clientName, message.getMsgType(), message.isProto());
 
         try {
             if (Objects.nonNull(debugNetworkListener)) {
                 debugNetworkListener.onPacketMessageSent(message.getMsgType(), message.serialize());
             }
         } catch (Exception e) {
-            LOGGER.debug("DebugNetworkListener threw an exception", e);
+            LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.getMessage());
         }
 
         // we'll swallow any network failures here because they will be thrown later
@@ -309,14 +316,14 @@ public class CMClient {
 
     private Connection createConnection(EnumSet<ProtocolType> protocol) {
         var currentProxy = getCurrentProxy();
-        LOGGER.debug("Current proxy configuration: {}", currentProxy);
+        LOGGER.debug("{}: Current proxy configuration: {}", clientName, currentProxy);
 
         if (protocol.contains(ProtocolType.WEB_SOCKET)) {
-            return new WebSocketConnection(currentProxy);
+            return new WebSocketConnection(currentProxy, clientName);
         } else if (protocol.contains(ProtocolType.TCP)) {
-            return new EnvelopeEncryptedConnection(new TcpConnection(currentProxy), getUniverse());
+            return new EnvelopeEncryptedConnection(new TcpConnection(currentProxy, clientName), getUniverse());
         } else if (protocol.contains(ProtocolType.UDP)) {
-            return new EnvelopeEncryptedConnection(new UdpConnection(), getUniverse());
+            return new EnvelopeEncryptedConnection(new UdpConnection(clientName), getUniverse());
         }
 
         throw new IllegalArgumentException("Protocol bitmask has no supported protocols set.");
@@ -368,7 +375,7 @@ public class CMClient {
                 }
                 disconnectCallback.get();
             } catch (InterruptedException | ExecutionException e) {
-                LOGGER.debug("Disconnect callback was interupted", e);
+                LOGGER.debug("{}: Disconnect callback was interupted {}", clientName, e.getMessage());
             }
             disconnectCallback = null;
         }
@@ -381,7 +388,7 @@ public class CMClient {
 
     private void checkAndReturnProxyToQueue() {
         if (Objects.nonNull(currentProxyState)) {
-            LOGGER.debug("Return to connection proxy queue: " + currentProxyState.getProxy());
+            LOGGER.debug("{}: Return to connection proxy queue: {}", clientName, currentProxyState.getProxy());
             this.connectionProxies.offer(currentProxyState);
         }
     }
@@ -389,7 +396,7 @@ public class CMClient {
     private void incrementCounterWhenConnectionFailure(boolean isConnectionFailure) {
         if (isConnectionFailure && Objects.nonNull(currentProxyState)) {
             currentProxyState.incrementFailureCount();
-            LOGGER.debug("Failure conunter for {} equels to {}", currentProxyState.getProxy(),
+            LOGGER.debug("{}: Failure conunter for {} equels to {}", clientName, currentProxyState.getProxy(),
                     currentProxyState.getConnectionFailureCount().get());
 
             if (currentProxyState.getConnectionFailureCount().get() < maxConnectionFialureCount) {

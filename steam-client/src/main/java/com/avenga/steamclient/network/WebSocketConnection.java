@@ -25,17 +25,18 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
 
     private boolean isConnectionFailure;
 
-    public WebSocketConnection(Proxy proxy) {
+    public WebSocketConnection(Proxy proxy, String clientName) {
         this.connectionProxy = proxy;
+        this.clientName = clientName;
     }
 
     @Override
     public void connect(InetSocketAddress endPoint, int timeout) {
-        LOGGER.debug("Connecting to " + endPoint + "...");
+        LOGGER.debug("{}: Connecting to {}...", clientName, endPoint);
         WebSocketCMClient newClient = new WebSocketCMClient(getUri(endPoint), timeout, this);
         WebSocketCMClient oldClient = client.getAndSet(newClient);
         if (oldClient != null) {
-            LOGGER.debug("Attempted to connect while already connected. Closing old connection...");
+            LOGGER.debug("{}: Attempted to connect while already connected. Closing old connection...", clientName);
             oldClient.close();
         }
 
@@ -53,7 +54,7 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
         try {
             client.get().send(data);
         } catch (Exception e) {
-            LOGGER.debug("Exception while sending data", e);
+            LOGGER.debug("{}: Exception while sending data {}", clientName, e.getMessage());
             disconnectCore(false);
         }
     }
@@ -100,7 +101,7 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
 
     @Override
     public void onError(Exception ex) {
-        LOGGER.debug("error in websocket", ex);
+        LOGGER.debug("{}: error in websocket", clientName, ex);
         if (ex instanceof IOException) {
             this.isConnectionFailure = true;
         }
@@ -108,7 +109,7 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
 
     @Override
     public void onOpen() {
-        LOGGER.debug("Connected to " + getCurrentEndPoint());
+        LOGGER.debug("{}: Connected to {}", clientName, getCurrentEndPoint());
         onConnected();
     }
 

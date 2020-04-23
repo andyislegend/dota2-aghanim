@@ -22,6 +22,7 @@ public class UserCredentialsProvider {
     private final ConcurrentLinkedQueue<LogOnDetailsRecord> credentialRecords;
     private final List<LogOnDetailsRecord> bannedCredentialRecords;
     private ScheduledExecutorService executor;
+    private String clientName;
 
     public UserCredentialsProvider(List<LogOnDetails> logOnDetails) {
         this.credentialRecords = new ConcurrentLinkedQueue<>();
@@ -36,7 +37,7 @@ public class UserCredentialsProvider {
         while (detailsRecord == null) {
             detailsRecord = credentialRecords.poll();
             if (detailsRecord == null) {
-                LOGGER.info("Waiting for user credentials: {} second(s)", THREAD_SLEEP_TIME);
+                LOGGER.info("{}: Waiting for user credentials: {} second(s)", clientName, THREAD_SLEEP_TIME);
                 try {
                     TimeUnit.SECONDS.sleep(THREAD_SLEEP_TIME);
                 } catch (InterruptedException e) {
@@ -49,7 +50,8 @@ public class UserCredentialsProvider {
 
     public void returnKey(LogOnDetailsRecord detailsRecord) {
         if (detailsRecord.isBlocked() || detailsRecord.isPermanentlyBlocked()) {
-            LOGGER.debug("User {} was banned until: {}", detailsRecord.getLogOnDetails().getUsername(), detailsRecord.getBlockedTime());
+            LOGGER.debug("{}: User {} was banned until: {}", clientName, detailsRecord.getLogOnDetails().getUsername(),
+                    detailsRecord.getBlockedTime());
             bannedCredentialRecords.add(detailsRecord);
         } else {
             credentialRecords.add(detailsRecord);
@@ -57,7 +59,8 @@ public class UserCredentialsProvider {
     }
 
     public void returnBlockedKey(LogOnDetailsRecord detailsRecord) {
-        LOGGER.debug("User {} was banned until: {}", detailsRecord.getLogOnDetails().getUsername(), detailsRecord.getBlockedTime());
+        LOGGER.debug("{}: User {} was banned until: {}", clientName, detailsRecord.getLogOnDetails().getUsername(),
+                detailsRecord.getBlockedTime());
         credentialRecords.remove(detailsRecord);
         bannedCredentialRecords.add(detailsRecord);
     }
@@ -74,6 +77,10 @@ public class UserCredentialsProvider {
         resetBannedUserCredentials();
     }
 
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
     private void resetBannedUserCredentials() {
         var scheduledFuture = executor.scheduleAtFixedRate(() -> {
             try {
@@ -85,11 +92,11 @@ public class UserCredentialsProvider {
                         record.resetBlockedTime();
                         credentialRecords.add(record);
                         iterator.remove();
-                        LOGGER.debug("User {} was removed from banned list", record.getLogOnDetails().getUsername());
+                        LOGGER.debug("{}: User {} was removed from banned list", clientName, record.getLogOnDetails().getUsername());
                     }
                 }
             } catch (Exception e) {
-                LOGGER.debug("Exception in user credentials schedular task: {}", e.getMessage(), e);
+                LOGGER.debug("{}: Exception in user credentials schedular task: {}", clientName, e.getMessage());
             }
         }, THREAD_SLEEP_TIME, BANNED_TIME_CHECK_PERIOD, TimeUnit.SECONDS);
     }

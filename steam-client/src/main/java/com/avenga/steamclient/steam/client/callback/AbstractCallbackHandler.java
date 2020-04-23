@@ -41,7 +41,7 @@ public abstract class AbstractCallbackHandler<T> {
             client.removeCallbackFromQueue(callback);
             throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
         } catch (final InterruptedException | ExecutionException | CancellationException e) {
-            LOGGER.debug(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e));
+            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.getMessage());
             return Optional.empty();
         }
     }
@@ -60,13 +60,14 @@ public abstract class AbstractCallbackHandler<T> {
      * @return Packet message received from the the Steam Network servers.
      * @throws CallbackTimeoutException if the wait timed out.
      */
-    protected static <T> Optional<T> waitAndGetPacketMessage(SteamMessageCallback<T> callback, long timeout, String handlerName) throws CallbackTimeoutException {
+    protected static <T> Optional<T> waitAndGetPacketMessage(SteamMessageCallback<T> callback, long timeout, String handlerName,
+                                                             SteamClient client) throws CallbackTimeoutException {
         try {
             return Optional.ofNullable(callback.getCallback().get(timeout, TimeUnit.MILLISECONDS));
         } catch (final TimeoutException e) {
             throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
         } catch (final InterruptedException | ExecutionException | CancellationException e) {
-            LOGGER.debug(String.format(CALLBACK_EXCEPTION_MESSAGE_FORMAT, handlerName, e));
+            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.getMessage());
             return Optional.empty();
         }
     }
