@@ -96,4 +96,13 @@ public class SteamConfiguration {
     public SmartCMServerProvider getServerProvider() {
         return serverProvider;
     }
+
+    /**
+     * Sets CM Client name to {@link SmartCMServerProvider}.
+     *
+     * @param clientName of the CM Client
+     */
+    public void setClientNameToServerProvider(String clientName) {
+        this.serverProvider.setClientName(clientName);
+    }
 }

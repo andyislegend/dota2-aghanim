@@ -25,6 +25,7 @@ public class SmartCMServerProvider {
 
     private List<ServerInfo> servers = Collections.synchronizedList(new ArrayList<>());
     private Long badConnectionMemoryTimeSpan;
+    private String clientName;
 
     public SmartCMServerProvider(SteamConfiguration configuration) {
         Objects.requireNonNull(configuration, "Steam configuration wasn't provided");
@@ -41,7 +42,7 @@ public class SmartCMServerProvider {
     }
 
     private void resolveServerList() throws IOException {
-        LOGGER.debug("Resolving server list");
+        LOGGER.debug("{}: Resolving server list", clientName);
 
         List<ServerRecord> endPoints = configuration.getServerListProvider().fetchServerList();
         if (endPoints == null) {
@@ -49,11 +50,11 @@ public class SmartCMServerProvider {
         }
 
         if (endPoints.isEmpty() && configuration.isAllowDirectoryFetch()) {
-            LOGGER.debug("Server list provider had no entries, will query SteamDirectory");
+            LOGGER.debug("{}: Server list provider had no entries, will query SteamDirectory", clientName);
             endPoints = SteamDirectoryService.getServers(configuration);
         }
 
-        LOGGER.debug("Resolved " + endPoints.size() + " servers");
+        LOGGER.debug("{}: Resolved {} servers", clientName, endPoints.size());
         replaceList(endPoints);
     }
 
@@ -103,7 +104,8 @@ public class SmartCMServerProvider {
                 .forEach(serverInfos::add);
 
         serverInfos.forEach(serverInfo -> {
-            LOGGER.debug("Marking " + serverInfo.getRecord().getEndpoint() + " - " + serverInfo.getProtocol() + " as " + quality);
+            LOGGER.debug("{}: Marking {} - {} as {}", clientName, serverInfo.getRecord().getEndpoint(),
+                    serverInfo.getProtocol(), quality);
             markServerCore(serverInfo, quality);
         });
 
@@ -178,5 +180,14 @@ public class SmartCMServerProvider {
         }
 
         return getNextServerCandidateInternal(supportedProtocolTypes);
+    }
+
+    /**
+     * Sets CM Client name.
+     *
+     * @param clientName of the CM Client
+     */
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
     }
 }

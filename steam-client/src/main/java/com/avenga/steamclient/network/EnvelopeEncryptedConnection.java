@@ -58,7 +58,7 @@ public class EnvelopeEncryptedConnection extends Connection {
             PacketMessage packetMessage = CMClient.getPacketMessage(e.getData());
 
             if (!isExpectedEMsg(packetMessage.getMessageType())) {
-                LOGGER.debug("Rejected EMsg: " + packetMessage.getMessageType() + " during channel setup");
+                LOGGER.debug("{}: Rejected EMsg: {} during channel setup", inner.clientName, packetMessage.getMessageType());
                 return;
             }
 
@@ -90,14 +90,14 @@ public class EnvelopeEncryptedConnection extends Connection {
         EUniverse connectedUniverse = request.getBody().getUniverse();
         long protoVersion = request.getBody().getProtocolVersion();
 
-        LOGGER.debug("Got encryption request. Universe: " + connectedUniverse + " Protocol ver: " + protoVersion);
+        LOGGER.debug("{}: Got encryption request. Universe: {} Protocol ver: {}", inner.clientName, connectedUniverse, protoVersion);
 
         if (protoVersion != MsgChannelEncryptRequest.PROTOCOL_VERSION) {
-            LOGGER.debug("Encryption handshake protocol version mismatch!");
+            LOGGER.debug("{}: Encryption handshake protocol version mismatch!", inner.clientName);
         }
 
         if (connectedUniverse != universe) {
-            LOGGER.debug("Expected universe " + universe + " but server reported universe " + connectedUniverse);
+            LOGGER.debug("{}: Expected universe {} but server reported universe {}", inner.clientName, universe, connectedUniverse);
         }
 
         byte[] randomChallenge = null;
@@ -108,7 +108,8 @@ public class EnvelopeEncryptedConnection extends Connection {
         byte[] publicKey = KeyDictionary.getPublicKey(connectedUniverse);
 
         if (publicKey == null) {
-            LOGGER.debug("HandleEncryptRequest got request for invalid universe! Universe: " + connectedUniverse + " Protocol ver: " + protoVersion);
+            LOGGER.debug("{}: HandleEncryptRequest got request for invalid universe! Universe: {} Protocol ver: {}",
+                    inner.clientName, connectedUniverse, protoVersion);
             disconnect();
         }
 
@@ -137,7 +138,7 @@ public class EnvelopeEncryptedConnection extends Connection {
             response.write(keyCrc);
             response.write(0);
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.debug("{}: Encrypted response exception: {}", inner.clientName, e.getMessage());
         }
 
         if (randomChallenge != null) {
@@ -154,7 +155,7 @@ public class EnvelopeEncryptedConnection extends Connection {
     private void handleEncryptResult(PacketMessage packetMessage) {
         Message<MsgChannelEncryptResult> result = new Message<>(MsgChannelEncryptResult.class, packetMessage);
 
-        LOGGER.debug("Encryption result: " + result.getBody().getResult());
+        LOGGER.debug("{}: Encryption result: {}", inner.clientName, result.getBody().getResult());
 
         assert encryption != null;
 
@@ -162,7 +163,7 @@ public class EnvelopeEncryptedConnection extends Connection {
             state = EncryptionState.ENCRYPTED;
             connected.handleEvent(this, EventArgs.EMPTY);
         } else {
-            LOGGER.debug("Encryption channel setup failed");
+            LOGGER.debug("{}: Encryption channel setup failed", inner.clientName);
             disconnect();
         }
     }

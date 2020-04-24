@@ -22,7 +22,7 @@ public class CMListClientPacketHandler implements ClientPacketHandler {
         ClientMessageProtobuf<CMsgClientCMList.Builder> cmMsg = new ClientMessageProtobuf<>(CMsgClientCMList.class, packetMessage);
 
         if (cmMsg.getBody().getCmPortsCount() != cmMsg.getBody().getCmAddressesCount()) {
-            LOGGER.debug("HandleCMList received malformed message");
+            LOGGER.debug("{}: HandleCMList received malformed message", cmClient.getClientName());
         }
 
         List<Integer> addresses = cmMsg.getBody().getCmAddressesList();

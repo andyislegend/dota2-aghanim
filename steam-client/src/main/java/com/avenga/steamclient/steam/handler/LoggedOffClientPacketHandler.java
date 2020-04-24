@@ -30,7 +30,7 @@ public class LoggedOffClientPacketHandler implements ClientPacketHandler {
             EResult logoffResult = EResult.from(loggedOffMessage.getBody().getEresult());
 
             if (LOGGER.isDebugEnabled() && Objects.nonNull(logoffResult)) {
-                LOGGER.debug("Logged Off proto response: {}", logoffResult.name());
+                LOGGER.debug("{}: Logged Off proto response: {}", cmClient.getClientName(), logoffResult.name());
             }
 
             if (logoffResult == EResult.TryAnotherCM || logoffResult == EResult.ServiceUnavailable) {
@@ -42,7 +42,7 @@ public class LoggedOffClientPacketHandler implements ClientPacketHandler {
             EResult logoffResult = loggedOffMessage.getBody().getResult();
 
             if (LOGGER.isDebugEnabled() && Objects.nonNull(logoffResult)) {
-                LOGGER.debug("Logged Off response: {}", logoffResult.name());
+                LOGGER.debug("{}: Logged Off response: {}", cmClient.getClientName(), logoffResult.name());
             }
         }
     }

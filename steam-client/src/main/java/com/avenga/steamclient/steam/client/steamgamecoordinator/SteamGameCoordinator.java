@@ -54,7 +54,8 @@ public class SteamGameCoordinator extends ClientHandler {
     public void send(ClientGCMessage message, int applicationId, ProtocolMessageEnum messageEnum) {
         Objects.requireNonNull(message, "Client Game Coordinator message wasn't provided");
 
-        LOGGER.debug("Sent GC -> EMsg: {} (id: {})", messageEnum.getValueDescriptor().getName(), messageEnum.getNumber());
+        LOGGER.debug("{}: Sent GC -> EMsg: {} (id: {})", client.getClientName(), messageEnum.getValueDescriptor().getName(),
+                messageEnum.getNumber());
 
         var clientMsg = new ClientMessageProtobuf<CMsgGCClient.Builder>(CMsgGCClient.class, EMsg.ClientToGC);
         clientMsg.getProtoHeader().setRoutingAppid(applicationId);
@@ -83,7 +84,7 @@ public class SteamGameCoordinator extends ClientHandler {
 
         RetryHandlerUtil.getOrRetry(() -> {
             send(clientHelloMessage, applicationId, k_EMsgGCClientHello);
-            return GCHelloCallbackHandler.handle(gcSessionCallback, timeout);
+            return GCHelloCallbackHandler.handle(gcSessionCallback, timeout, client);
         }, gcSessionCallback, RETRY_COUNT, getClient());
     }
 

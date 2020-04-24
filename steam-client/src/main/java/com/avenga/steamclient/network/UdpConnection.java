@@ -89,7 +89,8 @@ public class UdpConnection extends Connection {
 
     private InetSocketAddress currentEndPoint;
 
-    public UdpConnection() {
+    public UdpConnection(String clientName) {
+        this.clientName = clientName;
         try {
             sock = new DatagramSocket();
         } catch (SocketException e) {
@@ -115,7 +116,7 @@ public class UdpConnection extends Connection {
         inSeqAcked = 0;
         inSeqHandled = 0;
 
-        LOGGER.debug("connecting to " + endPoint);
+        LOGGER.debug("{}: connecting to {}", clientName, endPoint);
         netLoop = new NetLoop(endPoint);
         netThread = new Thread(netLoop, "UdpConnection Thread");
         netThread.start();
@@ -233,7 +234,7 @@ public class UdpConnection extends Connection {
         inSeqAcked = inSeq;
         packet.getHeader().setSeqAck(inSeqAcked);
 
-        LOGGER.debug("Sent -> {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets",
+        LOGGER.debug("{}: Sent -> {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets", clientName,
                 packet.getHeader().getPacketType(), packet.getHeader().getSeqThis(), packet.getHeader().getSeqAck(),
                 packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg());
 
@@ -242,7 +243,7 @@ public class UdpConnection extends Connection {
         try {
             sock.send(new DatagramPacket(data, 0, data.length, currentEndPoint.getAddress(), currentEndPoint.getPort()));
         } catch (IOException e) {
-            LOGGER.debug("Critical socket failure", e);
+            LOGGER.debug("{}: Critical socket failure", clientName, e);
             state.set(UdpState.DISCONNECTING);
             return;
         }
@@ -279,7 +280,7 @@ public class UdpConnection extends Connection {
                     outPackets.clear();
                 }
 
-                LOGGER.debug("Sequenced packet resend required");
+                LOGGER.debug("{}: Sequenced packet resend required", clientName);
 
                 // Don't send more than 3 (Steam behavior?)
                 for (int i = 0; i < RESEND_COUNT && i < outPackets.size(); i++) {
@@ -348,7 +349,7 @@ public class UdpConnection extends Connection {
 
         byte[] data = baos.toByteArray();
 
-        LOGGER.debug("Dispatchin message: " + data.length + " bytes");
+        LOGGER.debug("{}: Dispatchin message: {} bytes", clientName, data.length);
 
         onNetMsgReceived(new NetMsgEventArgs(data, currentEndPoint));
 
@@ -370,7 +371,7 @@ public class UdpConnection extends Connection {
             return;
         }
 
-        LOGGER.debug("<- Recv'd {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets",
+        LOGGER.debug("{}: <- Recv'd {} Seq {} Ack {}; {} bytes; Message: {} bytes {} packets", clientName,
                 packet.getHeader().getPacketType(), packet.getHeader().getSeqThis(), packet.getHeader().getSeqAck(),
                 packet.getHeader().getPayloadSize(), packet.getHeader().getMsgSize(), packet.getHeader().getPacketsInMsg());
 
@@ -413,13 +414,13 @@ public class UdpConnection extends Connection {
                 receiveData(packet);
                 break;
             case Disconnect:
-                LOGGER.debug("Disconnected by server");
+                LOGGER.debug("{}: Disconnected by server", clientName);
                 state.set(UdpState.DISCONNECTED);
                 return;
             case Datagram:
                 break;
             default:
-                LOGGER.debug("Received unexpected packet type " + packet.getHeader().getPacketType());
+                LOGGER.debug("{}: Received unexpected packet type {}", clientName, packet.getHeader().getPacketType());
                 break;
         }
     }
@@ -448,7 +449,7 @@ public class UdpConnection extends Connection {
 
             inSeqHandled = packet.getHeader().getSeqThis();
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.debug("Exception during processing UDP challange {}", e.getMessage());
         }
     }
 
@@ -457,7 +458,7 @@ public class UdpConnection extends Connection {
             return;
         }
 
-        LOGGER.debug("Connection established");
+        LOGGER.debug("{}: Connection established", clientName);
         remoteConnId = packet.getHeader().getSourceConnID();
         inSeqHandled = packet.getHeader().getSeqThis();
 
@@ -502,7 +503,7 @@ public class UdpConnection extends Connection {
             try {
                 sock.setSoTimeout(150);
             } catch (SocketException e) {
-                LOGGER.debug(e.getMessage(), e);
+                LOGGER.debug("Exception during enabling SO timeout {}", e.getMessage());
             }
 
             if (currentEndPoint != null) {
@@ -525,7 +526,7 @@ public class UdpConnection extends Connection {
                         received = true;
                     } catch (SocketTimeoutException e) {
                         if (System.currentTimeMillis() > timeout) {
-                            LOGGER.debug("Connection timed out", e);
+                            LOGGER.debug("{}: Connection timed out {}", clientName, e.getMessage());
                             state.set(UdpState.DISCONNECTED);
                             break;
                         }
@@ -557,7 +558,7 @@ public class UdpConnection extends Connection {
                         }
                     }
                 } catch (IOException e) {
-                    LOGGER.debug("Exception while reading packer", e);
+                    LOGGER.debug("{}: Exception while reading packer {}", clientName, e.getMessage());
                     state.set(UdpState.DISCONNECTED);
                     break;
                 }
@@ -577,7 +578,7 @@ public class UdpConnection extends Connection {
                 // If a graceful shutdown has been requested, nothing in the outgoing queue is discarded.
                 // Once it's empty, we exit, since the last packet was our disconnect notification.
                 if (state.get() == UdpState.DISCONNECTING && outPackets.isEmpty()) {
-                    LOGGER.debug("Graceful disconnect completed");
+                    LOGGER.debug("{}: Graceful disconnect completed", clientName);
                     state.set(UdpState.DISCONNECTED);
                     userRequestDisconnect = true;
                     break;
@@ -588,7 +589,7 @@ public class UdpConnection extends Connection {
                 sock.close();
             }
 
-            LOGGER.debug("Calling onDisconnected");
+            LOGGER.debug("{}: Calling onDisconnected", clientName);
             onDisconnected(userRequestDisconnect);
         }
     }

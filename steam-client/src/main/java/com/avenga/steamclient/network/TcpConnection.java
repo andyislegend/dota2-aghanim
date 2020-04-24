@@ -34,7 +34,8 @@ public class TcpConnection extends Connection {
 
     private final Object netLock = new Object();
 
-    public TcpConnection(Proxy proxy) {
+    public TcpConnection(Proxy proxy, String clientName) {
+        this.clientName = clientName;
         this.connectionProxy = proxy;
     }
 
@@ -45,18 +46,18 @@ public class TcpConnection extends Connection {
                 socket.shutdownOutput();
             }
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.debug("{}: Socket shutdown exception: {}", clientName, e.getMessage());
         }
     }
 
     private void connectionCompleted(boolean success) {
         if (!success) {
-            LOGGER.debug("Timed out while connecting to " + currentEndPoint);
+            LOGGER.debug("{}: Timed out while connecting to {}", clientName, currentEndPoint);
             release(false);
             return;
         }
 
-        LOGGER.debug("Connected to " + currentEndPoint);
+        LOGGER.debug("{}: Connected to {}", clientName, currentEndPoint);
 
         try {
             synchronized (netLock) {
@@ -73,7 +74,7 @@ public class TcpConnection extends Connection {
 
             onConnected();
         } catch (IOException e) {
-            LOGGER.debug("Exception while setting up connection to " + currentEndPoint, e);
+            LOGGER.debug("{}: Exception while setting up connection to {}: {}", clientName, currentEndPoint, e.getMessage());
             checkAndSetConnectionFailure(e);
             release(false);
         }
@@ -114,13 +115,14 @@ public class TcpConnection extends Connection {
         synchronized (netLock) {
             currentEndPoint = endPoint;
             try {
-                LOGGER.debug("Connecting to " + currentEndPoint + "...");
+                LOGGER.debug("{}: Connecting to {} ...", clientName, currentEndPoint);
                 socket = getSocket();
                 socket.connect(endPoint, timeout);
 
                 connectionCompleted(true);
             } catch (IOException e) {
-                LOGGER.debug("Socket exception while completing connection request to " + currentEndPoint, e);
+                LOGGER.debug("{}: Socket exception while completing connection request to {}: {}",
+                        clientName, currentEndPoint, e.getMessage());
                 checkAndSetConnectionFailure(e);
                 connectionCompleted(false);
             }
@@ -151,7 +153,7 @@ public class TcpConnection extends Connection {
     public void send(byte[] data) {
         synchronized (netLock) {
             if (socket == null) {
-                LOGGER.debug("Attempting to send client data when not connected.");
+                LOGGER.debug("{}: Attempting to send client data when not connected.", clientName);
                 return;
             }
 
@@ -160,7 +162,7 @@ public class TcpConnection extends Connection {
                 netWriter.writeInt(MAGIC);
                 netWriter.write(data);
             } catch (IOException e) {
-                LOGGER.debug("Socket exception while writing data.", e);
+                LOGGER.debug("{}: Socket exception while writing data {}", clientName, e.getMessage());
 
                 // looks like the only the only way to detect a closed connection is to try and write to it
                 // afaik read also throws an exception if the connection is open but there is nothing to read
@@ -209,7 +211,7 @@ public class TcpConnection extends Connection {
                 try {
                     Thread.sleep(POLL_MS);
                 } catch (InterruptedException e) {
-                    LOGGER.debug("Thread interrupted", e);
+                    LOGGER.debug("{}: Thread interrupted {}", clientName, e.getMessage());
                 }
 
                 if (cancelRequested) {
@@ -221,7 +223,7 @@ public class TcpConnection extends Connection {
                 try {
                     canRead = netReader.available() > 0;
                 } catch (IOException e) {
-                    LOGGER.debug("Socket exception while polling", e);
+                    LOGGER.debug("{}: Socket exception while polling {}", clientName, e.getMessage());
                     break;
                 }
 
@@ -237,7 +239,7 @@ public class TcpConnection extends Connection {
 
                     onNetMsgReceived(new NetMsgEventArgs(packData, currentEndPoint));
                 } catch (IOException e) {
-                    LOGGER.debug("Socket exception occurred while reading packet", e);
+                    LOGGER.debug("{}: Socket exception occurred while reading packet {}", clientName, e.getMessage());
                     break;
                 }
             }
