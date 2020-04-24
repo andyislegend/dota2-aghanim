@@ -26,6 +26,11 @@ public abstract class Connection {
      */
     Event<DisconnectedEventArgs> disconnected = new Event<>();
 
+    /**
+     * Client name for logger to distinguish multiple instances.
+     */
+    protected String clientName = "CMClient";
+
     void onNetMsgReceived(NetMsgEventArgs e) {
         if (netMsgReceived != null) {
             netMsgReceived.handleEvent(this, e);
@@ -103,5 +108,9 @@ public abstract class Connection {
 
     public Event<DisconnectedEventArgs> getDisconnected() {
         return disconnected;
+    }
+
+    public String getClientName() {
+        return clientName;
     }
 }

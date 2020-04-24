@@ -53,7 +53,7 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
     public void send(ClientGCMessage gcMessage, int applicationId, ProtocolMessageEnum messageEnum) {
         Objects.requireNonNull(gcMessage, "GC message wasn't provided");
 
-        LOGGER.debug("Sent GC -> EMsg: {} (id: {})", messageEnum.getValueDescriptor().getName(),
+        LOGGER.debug("{}: Sent GC -> EMsg: {} (id: {})", client.getClientName(), messageEnum.getValueDescriptor().getName(),
                 messageEnum.getNumber());
 
         ClientMessageProtobuf<CMsgGCClient.Builder> clientMsg = new ClientMessageProtobuf<>(CMsgGCClient.class, EMsg.ClientToGC);
@@ -130,8 +130,8 @@ public class SteamGameCoordinatorAsync extends ClientMessageHandler {
 
         var gcMessage = new GCMessage(msg.getBody());
 
-        LOGGER.debug("<- Recv'd GC EMsg: {} ({}) (Proto: {}) (AppId: {})", gcMessage.getMessageType(), gcMessage.geteMsg(),
-                gcMessage.isProto(), gcMessage.getApplicationID());
+        LOGGER.debug("{}: <- Recv'd GC EMsg: {} ({}) (Proto: {}) (AppId: {})", client.getClientName(), gcMessage.getMessageType(),
+                gcMessage.geteMsg(), gcMessage.isProto(), gcMessage.getApplicationID());
 
         gcHandlers.forEach((clazz, handler) -> {
             if (handler.getApplicationId() == gcMessage.getApplicationID()) {

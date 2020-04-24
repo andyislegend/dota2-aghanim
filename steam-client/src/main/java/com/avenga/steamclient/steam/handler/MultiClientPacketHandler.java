@@ -24,7 +24,7 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
     @Override
     public void handle(PacketMessage packetMessage, CMClient cmClient) {
         if (!packetMessage.isProto()) {
-            LOGGER.debug("HandleMulti got non-proto MsgMulti!!");
+            LOGGER.debug("{}: HandleMulti got non-proto MsgMulti!!", cmClient.getClientName());
             return;
         }
 
@@ -47,7 +47,8 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
                 }
                 payload = outputStream.toByteArray();
             } catch (IOException e) {
-                LOGGER.debug("HandleMulti encountered an exception when decompressing.", e);
+                LOGGER.debug("{}: HandleMulti encountered an exception when decompressing: {}",
+                        cmClient.getClientName(), e.getMessage());
                 return;
             }
         }
@@ -66,8 +67,8 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            packetMessages.forEach(message -> LOGGER.debug("<- Part of Multi - EMsg: {} ({}) (Proto: {})",
-                    message.getMessageType(), message.getMessageType().code(), message.isProto()));
+            packetMessages.forEach(message -> LOGGER.debug("{}: <- Part of Multi - EMsg: {} ({}) (Proto: {})",
+                    cmClient.getClientName(), message.getMessageType(), message.getMessageType().code(), message.isProto()));
         }
 
         for (PacketMessage message : packetMessages) {

@@ -21,7 +21,8 @@ public class RetryHandlerUtil {
             try {
                 return supplier.get();
             } catch (CallbackTimeoutException e) {
-                LOGGER.debug("Consumer messageCallback handler retry count {} with error: {}", count, e.getMessage());
+                LOGGER.debug("{}: Consumer messageCallback handler retry count {} with error: {}",
+                        client.getClientName(), count, e.getMessage());
                 count++;
                 errorMessage = e.getMessage();
             }

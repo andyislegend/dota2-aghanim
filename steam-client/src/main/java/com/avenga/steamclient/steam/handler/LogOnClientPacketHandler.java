@@ -19,7 +19,7 @@ public class LogOnClientPacketHandler implements ClientPacketHandler {
         if (!packetMessage.isProto()) {
             // a non proto ClientLogonResponse can come in as a result of connecting but never sending a ClientLogon
             // in this case, it always fails, so we don't need to do anything special here
-            LOGGER.debug("Got non-proto logon response, this is indicative of no logon attempt after connecting.");
+            LOGGER.debug("{}: Got non-proto logon response, this is indicative of no logon attempt after connecting.", cmClient.getClientName());
             return;
         }
 

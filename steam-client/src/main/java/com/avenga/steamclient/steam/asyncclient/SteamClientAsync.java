@@ -2,6 +2,7 @@ package com.avenga.steamclient.steam.asyncclient;
 
 import com.avenga.steamclient.base.ClientMessageProtobuf;
 import com.avenga.steamclient.base.PacketMessage;
+import com.avenga.steamclient.constant.Constant;
 import com.avenga.steamclient.enums.EMsg;
 import com.avenga.steamclient.model.JobID;
 import com.avenga.steamclient.model.configuration.SteamConfiguration;
@@ -54,7 +55,28 @@ public class SteamClientAsync extends CMClient {
      * @param configuration The configuration to use for this client.
      */
     public SteamClientAsync(SteamConfiguration configuration) {
-        super(configuration);
+        super(configuration, Constant.DEFAULT_CLIENT_NAME);
+    }
+
+    /**
+     * Initializes a new instance of the {@link SteamClientAsync} class with the default configuration and specified
+     * clientName prefix for logger messages.
+     *
+     * @param clientName prefix for logger messages.
+     */
+    public SteamClientAsync(String clientName) {
+        super(new SteamConfiguration(), clientName);
+    }
+
+    /**
+     * Initializes a new instance of the {@link SteamClientAsync} class with a specific configuration and specified
+     * clientName prefix for logger messages.
+     *
+     * @param configuration The configuration to use for this client.
+     * @param clientName prefix for logger messages.
+     */
+    public SteamClientAsync(SteamConfiguration configuration, String clientName) {
+        super(configuration, clientName);
 
         processStartTime = Instant.now();
 
@@ -190,7 +212,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait();
                 } catch (final InterruptedException e) {
-                    LOGGER.debug(e.getMessage(), e);
+                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.getMessage());
                 }
 
                 if (callbackQueue.isEmpty()) {
@@ -215,7 +237,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait(timeout);
                 } catch (final InterruptedException e) {
-                    LOGGER.debug(e.getMessage(), e);
+                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.getMessage());
                 }
             }
 
@@ -238,7 +260,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait(timeout);
                 } catch (InterruptedException e) {
-                    LOGGER.debug(e.getMessage(), e);
+                    LOGGER.debug("{}: Exception during waiting all callback {}", clientName, e.getMessage());
                 }
 
                 if (callbackQueue.isEmpty()) {

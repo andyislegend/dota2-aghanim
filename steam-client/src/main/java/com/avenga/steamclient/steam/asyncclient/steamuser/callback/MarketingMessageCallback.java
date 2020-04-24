@@ -46,7 +46,7 @@ public class MarketingMessageCallback extends BaseCallbackMessage {
                 marketingMessages.add(getMessage(messageData));
             }
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.debug("Execption during reading message from protobuff: {}", e.getMessage());
         }
 
         this.messages = Collections.unmodifiableList(marketingMessages);
@@ -59,7 +59,7 @@ public class MarketingMessageCallback extends BaseCallbackMessage {
             marketingMessage.setUrl(binaryReader.readNullTermString(StandardCharsets.UTF_8));
             marketingMessage.setFlags(EMarketingMessageFlags.from(binaryReader.readInt()));
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.debug("Execption during reading message from bytes: {}", e.getMessage());
         }
 
         return marketingMessage;
