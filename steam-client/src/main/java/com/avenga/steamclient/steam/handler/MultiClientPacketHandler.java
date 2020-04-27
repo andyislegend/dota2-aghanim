@@ -48,7 +48,7 @@ public class MultiClientPacketHandler implements ClientPacketHandler {
                 payload = outputStream.toByteArray();
             } catch (IOException e) {
                 LOGGER.debug("{}: HandleMulti encountered an exception when decompressing: {}",
-                        cmClient.getClientName(), e.getMessage());
+                        cmClient.getClientName(), e.toString());
                 return;
             }
         }

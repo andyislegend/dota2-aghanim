@@ -212,7 +212,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait();
                 } catch (final InterruptedException e) {
-                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.getMessage());
+                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.toString());
                 }
 
                 if (callbackQueue.isEmpty()) {
@@ -237,7 +237,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait(timeout);
                 } catch (final InterruptedException e) {
-                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.getMessage());
+                    LOGGER.debug("{}: Exception during waiting callback {}", clientName, e.toString());
                 }
             }
 
@@ -260,7 +260,7 @@ public class SteamClientAsync extends CMClient {
                 try {
                     callbackLock.wait(timeout);
                 } catch (InterruptedException e) {
-                    LOGGER.debug("{}: Exception during waiting all callback {}", clientName, e.getMessage());
+                    LOGGER.debug("{}: Exception during waiting all callback {}", clientName, e.toString());
                 }
 
                 if (callbackQueue.isEmpty()) {

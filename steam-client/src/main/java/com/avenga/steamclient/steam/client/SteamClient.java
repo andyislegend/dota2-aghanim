@@ -44,10 +44,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.avenga.steamclient.constant.ServiceMethodConstant.PLAYER_LAST_PLAYED_TIMES;
+import static java.util.stream.Collectors.toList;
 
 public class SteamClient extends CMClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SteamClient.class);
 
+    private static final long DEFAULT_UNSET_JOB_ID = -1L;
     private static final int DEFAULT_SEQUENCE_VALUE = 0;
     private static final int CLIENT_APPLICATION_ID = 0;
     private static final long DEFAULT_RECONECT_TIMEOUT = 15000;
@@ -105,6 +107,7 @@ public class SteamClient extends CMClient {
     private boolean connectingInProgress;
     private Instant processStartTime;
     private final AtomicLong jobSequence = new AtomicLong(DEFAULT_SEQUENCE_VALUE);
+    private ScheduledExecutorService callbackQueueCleanJob;
 
     /**
      * Initializes a new instance of the {@link SteamClient} class with the default configuration.
@@ -200,6 +203,26 @@ public class SteamClient extends CMClient {
      */
     public SteamMessageCallback<GCPacketMessage> addGCCallbackToQueue(int messageCode, int applicationId) {
         var steamCallback = new SteamMessageCallback<>(messageCode, applicationId, queueSequence.getAndIncrement(),
+                new CompletableFuture<GCPacketMessage>());
+
+        if (!callbacksQueue.offer(steamCallback)) {
+            throw new CallbackQueueException(
+                    "Game Coordinator callback for handling message with code '" + messageCode + "' wasn't added to queue");
+        }
+
+        return steamCallback;
+    }
+
+    /**
+     * Creates and add steam client callback wrapper for handling {@link GCPacketMessage} received from Game Coordinator server.
+     *
+     * @param messageCode   Code of the packet message.
+     * @param applicationId Id of the Steam client or games.
+     * @param jobId Id of the job ID set in the header of the packet message.
+     * @return Callback wrapper which hold Game Coordinator packet message callback.
+     */
+    public SteamMessageCallback<GCPacketMessage> addGCCallbackToQueue(int messageCode, int applicationId, long jobId) {
+        var steamCallback = new SteamMessageCallback<>(messageCode, applicationId, queueSequence.getAndIncrement(), jobId,
                 new CompletableFuture<GCPacketMessage>());
 
         if (!callbacksQueue.offer(steamCallback)) {
@@ -366,6 +389,49 @@ public class SteamClient extends CMClient {
     }
 
     /**
+     * Starts clean job of the {@link #callbacksQueue}. Callbacks registered for Steam client API methods which
+     * provide {@link CompletableFuture}, won't be cleaned from callback queue automatically, in case
+     * Game Coordinator won't respond on request. To handle such case user can init clean job and provide
+     * time when callback should be cleaned.
+     * <p>
+     * Please consider expiredCallbackTime correctly based on your business logic to prevent cleaning valid callbacks,
+     * e.g. {@link #connectAndLogin()} method use {@link #DEFAULT_RECONECT_TIMEOUT} in milliseconds.
+     *
+     * @param expiredCallbackTime in seconds after callback was registered and should be cleaned from queue.
+     * @param cleanPeriod perid in seconds when job will check and clean expired callbacks.
+     */
+    public void startCallbackCleanJob(long expiredCallbackTime, long cleanPeriod) {
+        if (expiredCallbackTime <= 0) {
+            throw new IllegalArgumentException("Expired Callback time should be greater than 0");
+        }
+        if (cleanPeriod <= 0) {
+            throw new IllegalArgumentException("Clean period should be greater than 0");
+        }
+
+        if (Objects.nonNull(callbackQueueCleanJob) && !callbackQueueCleanJob.isShutdown()) {
+            return;
+        }
+
+        callbackQueueCleanJob = Executors.newSingleThreadScheduledExecutor();
+        callbackQueueCleanJob.scheduleAtFixedRate(() -> {
+            try {
+                var currentTime = Instant.now();
+                var expiredCallbacks = callbacksQueue.stream()
+                        .filter(callback -> Objects.nonNull(callback.getCreatedAt())
+                                && currentTime.isAfter(callback.getCreatedAt().plusSeconds(expiredCallbackTime)))
+                        .collect(toList());
+
+                if (!expiredCallbacks.isEmpty()) {
+                    LOGGER.debug("Cleaned {} expired callbacks from queue.", expiredCallbacks.size());
+                    callbacksQueue.removeAll(expiredCallbacks);
+                }
+            } catch (Exception e) {
+                LOGGER.debug("Exception thrown during cleaning callbacks queue: {}", e.toString());
+            }
+        }, cleanPeriod,  cleanPeriod, TimeUnit.SECONDS);
+    }
+
+    /**
      * Blocks current logged user for provided time period. User won't be provided from {@link UserCredentialsProvider}
      * during blocked time period.
      * <p>
@@ -447,7 +513,8 @@ public class SteamClient extends CMClient {
         LOGGER.debug("{}: <- Recv'd GC EMsg: {} ({}) (Proto: {})", clientName, gcMessage.getMessageType(),
                 gcMessage.geteMsg(), gcMessage.isProto());
 
-        findAndCompleteCallback(getCallbackPredicate(gcMessage.geteMsg(), gcMessage.getApplicationID()), gcMessage.getMessage());
+        findAndCompleteCallback(getCallbackPredicate(gcMessage.geteMsg(), gcMessage.getApplicationID(),
+            gcMessage.getMessage().getTargetJobID().getValue()), gcMessage.getMessage());
     }
 
     private void handleGamePlayingSession(PacketMessage packetMessage) {
@@ -506,7 +573,7 @@ public class SteamClient extends CMClient {
             var playedTimesResponse = (SteammessagesPlayerSteamclient.CPlayer_GetLastPlayedTimes_Response) body.getBody().build();
             var gameIds = playedTimesResponse.getGamesList().stream()
                     .map(game -> String.valueOf(game.getAppid()))
-                    .collect(Collectors.toList());
+                    .collect(toList());
             var predicate = getCallbackPredicate(packetMessage.getMessageType().code(), CLIENT_APPLICATION_ID)
                     .and(getServiceMethodBodyPredicate(gameIds));
 
@@ -575,7 +642,11 @@ public class SteamClient extends CMClient {
                 connectAndLogin();
             } else {
                 credentialsProvider.stopResetBannedCredentialJob();
+                callbackQueueCleanJob.shutdown();
             }
+        }
+        if (Objects.isNull(credentialsProvider)) {
+            callbackQueueCleanJob.shutdown();
         }
     }
 
@@ -611,7 +682,7 @@ public class SteamClient extends CMClient {
         try {
             TimeUnit.MILLISECONDS.sleep(DEFAULT_RECONECT_TIMEOUT);
         } catch (InterruptedException ex) {
-            LOGGER.debug("{}: Exception occuers during waiting connection retry: {}", clientName, ex.getMessage());
+            LOGGER.debug("{}: Exception occuers during waiting connection retry: {}", clientName, ex.toString());
         }
     }
 
@@ -637,5 +708,14 @@ public class SteamClient extends CMClient {
     private Predicate<CompletableCallback> getCallbackPredicate(int messageCode, int applicationId) {
         return completableCallback -> completableCallback.getMessageCode() == messageCode
                 && completableCallback.getApplicationId() == applicationId;
+    }
+
+    private Predicate<CompletableCallback> getCallbackPredicate(int messageCode, int applicationId, long jobId) {
+        if (jobId != DEFAULT_UNSET_JOB_ID) {
+            return getCallbackPredicate(messageCode, applicationId)
+                    .and(completableCallback -> completableCallback.getJobId() == jobId);
+        }
+
+        return getCallbackPredicate(messageCode, applicationId);
     }
 }

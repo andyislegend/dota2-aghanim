@@ -41,7 +41,7 @@ public abstract class AbstractCallbackHandler<T> {
             client.removeCallbackFromQueue(callback);
             throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
         } catch (final InterruptedException | ExecutionException | CancellationException e) {
-            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.getMessage());
+            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.toString());
             return Optional.empty();
         }
     }
@@ -67,7 +67,7 @@ public abstract class AbstractCallbackHandler<T> {
         } catch (final TimeoutException e) {
             throw new CallbackTimeoutException(String.format(TIMEOUT_EXCEPTION_MESSAGE_FORMAT, handlerName, callback.getSequence()), e);
         } catch (final InterruptedException | ExecutionException | CancellationException e) {
-            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.getMessage());
+            LOGGER.debug(CALLBACK_EXCEPTION_MESSAGE_FORMAT, client.getClientName(), handlerName, e.toString());
             return Optional.empty();
         }
     }
