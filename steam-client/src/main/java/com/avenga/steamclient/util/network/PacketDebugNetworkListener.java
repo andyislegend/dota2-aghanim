@@ -51,7 +51,7 @@ public class PacketDebugNetworkListener implements DebugNetworkListener {
         try {
             Files.write(Paths.get(new File(logDirectory, getFile(RECEIVED_PACKET_FOLDER, msgType)).getAbsolutePath()), data);
         } catch (IOException e) {
-            LOGGER.debug("Filed to write received debugging packet message to file: ", e.getMessage());
+            LOGGER.debug("Filed to write received debugging packet message to file:", e);
         }
     }
 
@@ -60,7 +60,7 @@ public class PacketDebugNetworkListener implements DebugNetworkListener {
         try {
             Files.write(Paths.get(new File(logDirectory, getFile(SENT_PACKET_FOLDER, msgType)).getAbsolutePath()), data);
         } catch (IOException e) {
-            LOGGER.debug("Filed to write sent debugging packet message to file: ", e.getMessage());
+            LOGGER.debug("Filed to write sent debugging packet message to file:", e);
         }
     }
 

@@ -449,7 +449,7 @@ public class UdpConnection extends Connection {
 
             inSeqHandled = packet.getHeader().getSeqThis();
         } catch (IOException e) {
-            LOGGER.debug("Exception during processing UDP challange {}", e.getMessage());
+            LOGGER.debug("Exception during processing UDP challange {}", e.toString());
         }
     }
 
@@ -503,7 +503,7 @@ public class UdpConnection extends Connection {
             try {
                 sock.setSoTimeout(150);
             } catch (SocketException e) {
-                LOGGER.debug("Exception during enabling SO timeout {}", e.getMessage());
+                LOGGER.debug("Exception during enabling SO timeout {}", e.toString());
             }
 
             if (currentEndPoint != null) {
@@ -526,7 +526,7 @@ public class UdpConnection extends Connection {
                         received = true;
                     } catch (SocketTimeoutException e) {
                         if (System.currentTimeMillis() > timeout) {
-                            LOGGER.debug("{}: Connection timed out {}", clientName, e.getMessage());
+                            LOGGER.debug("{}: Connection timed out {}", clientName, e.toString());
                             state.set(UdpState.DISCONNECTED);
                             break;
                         }
@@ -558,7 +558,7 @@ public class UdpConnection extends Connection {
                         }
                     }
                 } catch (IOException e) {
-                    LOGGER.debug("{}: Exception while reading packer {}", clientName, e.getMessage());
+                    LOGGER.debug("{}: Exception while reading packer {}", clientName, e.toString());
                     state.set(UdpState.DISCONNECTED);
                     break;
                 }

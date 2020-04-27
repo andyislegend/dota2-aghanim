@@ -156,7 +156,7 @@ public class CMClient {
                 connection.getDisconnected().addEventHandler(disconnected);
                 connection.connect(cmServer.getEndpoint());
             } catch (Exception e) {
-                LOGGER.debug("{}: Failed to connect to Steam network {}", clientName, e.getMessage());
+                LOGGER.debug("{}: Failed to connect to Steam network {}", clientName, e.toString());
                 onClientDisconnected(false);
             }
         }
@@ -192,7 +192,7 @@ public class CMClient {
                     debugNetworkListener.onPacketMessageReceived(packetMessage.getMessageType(), packetMessage.getData());
                 }
             } catch (Exception e) {
-                LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.getMessage());
+                LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.toString());
             }
         }
 
@@ -229,7 +229,7 @@ public class CMClient {
                 debugNetworkListener.onPacketMessageSent(message.getMsgType(), message.serialize());
             }
         } catch (Exception e) {
-            LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.getMessage());
+            LOGGER.debug("{}: DebugNetworkListener threw an exception {}", clientName, e.toString());
         }
 
         // we'll swallow any network failures here because they will be thrown later
@@ -375,7 +375,7 @@ public class CMClient {
                 }
                 disconnectCallback.get();
             } catch (InterruptedException | ExecutionException e) {
-                LOGGER.debug("{}: Disconnect callback was interupted {}", clientName, e.getMessage());
+                LOGGER.debug("{}: Disconnect callback was interupted {}", clientName, e.toString());
             }
             disconnectCallback = null;
         }

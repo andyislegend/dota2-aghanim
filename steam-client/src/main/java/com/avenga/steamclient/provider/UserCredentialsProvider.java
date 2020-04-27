@@ -96,7 +96,7 @@ public class UserCredentialsProvider {
                     }
                 }
             } catch (Exception e) {
-                LOGGER.debug("{}: Exception in user credentials schedular task: {}", clientName, e.getMessage());
+                LOGGER.debug("{}: Exception in user credentials schedular task: {}", clientName, e.toString());
             }
         }, THREAD_SLEEP_TIME, BANNED_TIME_CHECK_PERIOD, TimeUnit.SECONDS);
     }
