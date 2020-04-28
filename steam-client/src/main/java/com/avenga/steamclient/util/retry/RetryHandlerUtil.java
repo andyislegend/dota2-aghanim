@@ -22,9 +22,9 @@ public class RetryHandlerUtil {
                 return supplier.get();
             } catch (CallbackTimeoutException e) {
                 LOGGER.debug("{}: Consumer messageCallback handler retry count {} with error: {}",
-                        client.getClientName(), count, e.getMessage());
+                        client.getClientName(), count, e.toString());
                 count++;
-                errorMessage = e.getMessage();
+                errorMessage = e.toString();
             }
         }
         client.removeCallbackFromQueue(messageCallback);

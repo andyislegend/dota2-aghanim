@@ -54,8 +54,10 @@ public class DotaClient extends ClientGCHandler {
      * @return CompletableFuture Callback with {@link DotaMatchDetails} details of the DOTA 2 match.
      */
     public CompletableFuture<DotaMatchDetails> getMatchDetails(long matchId) {
-        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
-        sendMatchDetailsRequest(matchId);
+        var jobId = getClient().getNextJobID().getValue();
+        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(),
+                applicationId, jobId);
+        sendMatchDetailsRequest(matchId, jobId);
         return matchDetailsCallback.getCallback()
                 .thenApply(MatchDetailsCallbackHandler::getMessage);
     }
@@ -73,8 +75,10 @@ public class DotaClient extends ClientGCHandler {
      * @throws CallbackTimeoutException if the wait timed out
      */
     public Optional<DotaMatchDetails> getMatchDetails(long matchId, long timeout) throws CallbackTimeoutException {
-        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(), applicationId);
-        sendMatchDetailsRequest(matchId);
+        var jobId = getClient().getNextJobID().getValue();
+        var matchDetailsCallback = getClient().addGCCallbackToQueue(k_EMsgGCMatchDetailsResponse.getNumber(),
+                applicationId, jobId);
+        sendMatchDetailsRequest(matchId, jobId);
         return MatchDetailsCallbackHandler.handle(matchDetailsCallback, timeout, getClient());
     }
 
@@ -88,8 +92,10 @@ public class DotaClient extends ClientGCHandler {
      * @return CompletableFuture Callback with {@link DotaProfileCard} user account profile card.
      */
     public CompletableFuture<DotaProfileCard> getAccountProfileCard(int accountId) {
-        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
-        sendProfileCardRequest(accountId);
+        var jobId = getClient().getNextJobID().getValue();
+        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(),
+                applicationId, jobId);
+        sendProfileCardRequest(accountId, jobId);
         return profileCardCallback.getCallback()
                 .thenApply(ProfileCardCallbackHandler::getMessage);
     }
@@ -107,24 +113,26 @@ public class DotaClient extends ClientGCHandler {
      * @throws CallbackTimeoutException if the wait timed out
      */
     public Optional<DotaProfileCard> getAccountProfileCard(int accountId, long timeout) throws CallbackTimeoutException {
-        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(), applicationId);
-        sendProfileCardRequest(accountId);
+        var jobId = getClient().getNextJobID().getValue();
+        var profileCardCallback = getClient().addGCCallbackToQueue(k_EMsgClientToGCGetProfileCardResponse.getNumber(),
+                applicationId, jobId);
+        sendProfileCardRequest(accountId, jobId);
         return ProfileCardCallbackHandler.handle(profileCardCallback, timeout, getClient());
     }
 
-    private void sendMatchDetailsRequest(long matchId) {
+    private void sendMatchDetailsRequest(long matchId, long jobId) {
         var matchRequestMessage = new ClientGCProtobufMessage<CMsgGCMatchDetailsRequest.Builder>(CMsgGCMatchDetailsRequest.class,
                 k_EMsgGCMatchDetailsRequest.getNumber());
         matchRequestMessage.getBody().setMatchId(matchId);
-        matchRequestMessage.getHeader().getProto().setJobidSource(getClient().getNextJobID().getValue());
+        matchRequestMessage.getHeader().getProto().setJobidSource(jobId);
         gameCoordinator.send(matchRequestMessage, applicationId, k_EMsgGCMatchDetailsRequest);
     }
 
-    private void sendProfileCardRequest(int accountId) {
+    private void sendProfileCardRequest(int accountId, long jobId) {
         var profileCardMessage = new ClientGCProtobufMessage<CMsgClientToGCGetProfileCard.Builder>(CMsgClientToGCGetProfileCard.class,
                 k_EMsgClientToGCGetProfileCard.getNumber());
         profileCardMessage.getBody().setAccountId(accountId);
-        profileCardMessage.getHeader().getProto().setJobidSource(getClient().getNextJobID().getValue());
+        profileCardMessage.getHeader().getProto().setJobidSource(jobId);
         gameCoordinator.send(profileCardMessage, applicationId, k_EMsgClientToGCGetProfileCard);
     }
 }

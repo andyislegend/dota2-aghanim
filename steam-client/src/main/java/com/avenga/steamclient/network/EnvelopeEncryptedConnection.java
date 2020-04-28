@@ -138,7 +138,7 @@ public class EnvelopeEncryptedConnection extends Connection {
             response.write(keyCrc);
             response.write(0);
         } catch (IOException e) {
-            LOGGER.debug("{}: Encrypted response exception: {}", inner.clientName, e.getMessage());
+            LOGGER.debug("{}: Encrypted response exception: {}", inner.clientName, e.toString());
         }
 
         if (randomChallenge != null) {

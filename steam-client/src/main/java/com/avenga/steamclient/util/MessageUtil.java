@@ -108,7 +108,7 @@ public class MessageUtil {
         try (ByteArrayInputStream stream = new ByteArrayInputStream(packetMessage.getData())) {
             header.deserialize(stream);
         } catch (IOException e) {
-            LOGGER.debug("Fail to deserialize rawEMsg {} header: {}", packetMessage.getMessageType().code(), e.getMessage());
+            LOGGER.debug("Fail to deserialize rawEMsg {} header: {}", packetMessage.getMessageType().code(), e.toString());
         }
         return header;
     }

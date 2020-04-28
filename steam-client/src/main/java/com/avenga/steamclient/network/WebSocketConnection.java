@@ -54,7 +54,7 @@ public class WebSocketConnection extends Connection implements WebSocketCMClient
         try {
             client.get().send(data);
         } catch (Exception e) {
-            LOGGER.debug("{}: Exception while sending data {}", clientName, e.getMessage());
+            LOGGER.debug("{}: Exception while sending data {}", clientName, e.toString());
             disconnectCore(false);
         }
     }

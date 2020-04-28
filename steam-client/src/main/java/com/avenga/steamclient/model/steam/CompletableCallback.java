@@ -4,6 +4,7 @@ import com.avenga.steamclient.base.GCPacketMessage;
 import com.avenga.steamclient.base.PacketMessage;
 import com.avenga.steamclient.steam.client.SteamClient;
 
+import java.time.Instant;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,6 +33,20 @@ public interface CompletableCallback {
      * @return Steam packet message code.
      */
     int getApplicationId();
+
+    /**
+     * Gets Id of the job ID set in the header of the packet message.
+     *
+     * @return Id of the job stored in packet message header.
+     */
+    long getJobId();
+
+    /**
+     * Gets time of the callback creation.
+     *
+     * @return callback creation time.
+     */
+    Instant getCreatedAt();
 
     /**
      * Gets additional registered properties of the callback.
