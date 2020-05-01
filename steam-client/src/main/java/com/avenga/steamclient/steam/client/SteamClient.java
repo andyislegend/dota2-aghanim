@@ -535,7 +535,7 @@ public class SteamClient extends CMClient {
      * Flag to check when auto reconnect execution is happaning. It could be used for tracking connection state in business logic,
      * when user will open connection using {@link #connectAndLogin()} method and provide {@link UserCredentialsProvider}.
      */
-    public boolean getIsAutoReconnectInProgress() {
+    public boolean isAutoReconnectInProgress() {
         return isAutoReconnectInProgress.get();
     }
 
