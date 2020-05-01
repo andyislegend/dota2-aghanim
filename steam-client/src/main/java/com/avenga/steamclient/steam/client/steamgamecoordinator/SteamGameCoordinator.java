@@ -33,7 +33,7 @@ public class SteamGameCoordinator extends ClientHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SteamGameCoordinator.class);
 
-    private static final int RETRY_COUNT = 3;
+    public static final int RETRY_COUNT = 3;
 
     private Map<Class<? extends ClientGCHandler>, ClientGCHandler> handlers = new HashMap<>();
 
