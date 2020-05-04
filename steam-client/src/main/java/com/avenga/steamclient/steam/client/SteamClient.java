@@ -313,7 +313,7 @@ public class SteamClient extends CMClient {
      */
     @Override
     public void disconnect() {
-        if (Objects.nonNull(taskHandlerJob) && isAutoReconnectInProgress.get()) {
+        if (Objects.nonNull(taskHandlerJob) && !connectingInProgress.get() && isAutoReconnectInProgress.get()) {
             taskHandlerJob.registerTask(new Task(() -> {
                 disconnectCallback = new CompletableFuture<Boolean>();
                 executeDisconnect();
@@ -499,8 +499,7 @@ public class SteamClient extends CMClient {
     }
 
     public void setReconnectOnUserInitiated(boolean reconnectOnUserInitiated) {
-        var currentValue = this.reconnectOnUserInitiated.get();
-        this.reconnectOnUserInitiated.compareAndSet(currentValue, reconnectOnUserInitiated);
+        this.reconnectOnUserInitiated.set(reconnectOnUserInitiated);
     }
 
     /**
