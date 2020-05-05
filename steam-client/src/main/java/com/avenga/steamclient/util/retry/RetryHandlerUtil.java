@@ -1,6 +1,5 @@
 package com.avenga.steamclient.util.retry;
 
-import com.avenga.steamclient.exception.CallbackCompletionException;
 import com.avenga.steamclient.exception.CallbackTimeoutException;
 import com.avenga.steamclient.model.steam.SteamMessageCallback;
 import com.avenga.steamclient.steam.client.SteamClient;
@@ -28,6 +27,6 @@ public class RetryHandlerUtil {
             }
         }
         client.removeCallbackFromQueue(messageCallback);
-        throw new CallbackCompletionException(String.format(RETRY_EXCEPTION_MESSAGE_FORMAT, retryCount, errorMessage));
+        throw new CallbackTimeoutException(String.format(RETRY_EXCEPTION_MESSAGE_FORMAT, retryCount, errorMessage));
     }
 }
