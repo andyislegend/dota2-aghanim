@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 
 public class TaskHandlerJob {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskHandlerJob.class);
-    private static final long TASK_CHECK_PERIOD = 1L;
+    private static final long DEFAULT_TASK_CHECK_PERIOD = 100L;
 
     private final ScheduledExecutorService scheduledExecutor;
     private final ExecutorService executor;
@@ -18,11 +18,12 @@ public class TaskHandlerJob {
     private AtomicReference<CompletableTask> currentTask = new AtomicReference<>();
     private String clientName;
 
-    public TaskHandlerJob(String clientName) {
+    public TaskHandlerJob(String clientName, long taskCheckPeriod) {
         this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         this.executor = Executors.newSingleThreadExecutor();
         this.taskQueue = new LinkedBlockingQueue<>();
         this.clientName = clientName;
+        var checkPeriodInterval = taskCheckPeriod > 0 ? taskCheckPeriod : DEFAULT_TASK_CHECK_PERIOD;
 
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
@@ -36,7 +37,7 @@ public class TaskHandlerJob {
             } catch (Exception e) {
                 LOGGER.debug("{}: Exception during executing task {}: {}", clientName, currentTask.get().getName(), e.toString());
             }
-        }, TASK_CHECK_PERIOD, TASK_CHECK_PERIOD, TimeUnit.SECONDS);
+        }, checkPeriodInterval, checkPeriodInterval, TimeUnit.MILLISECONDS);
     }
 
     public void registerTask(CompletableTask task) {

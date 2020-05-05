@@ -107,6 +107,13 @@ public class SteamClient extends CMClient {
      */
     private Map<EMsg, Consumer<PacketMessage>> clientPacketHandlers = new ConcurrentHashMap<>();
 
+    @Setter
+    /**
+     * Interval in milliseconds between checks of the task queue for executing available task.
+     * Default value: 100ms.
+     */
+    private long taskCheckPeriod;
+
     private AtomicReference<LogOnDetailsRecord> currentLoggedUser = new AtomicReference<>();
     private AtomicBoolean connectingInProgress = new AtomicBoolean();
     private Instant processStartTime;
@@ -560,9 +567,7 @@ public class SteamClient extends CMClient {
         findAndCompleteCallback(getCallbackPredicate(Constant.DISCONNECTED_PACKET_CODE, CLIENT_APPLICATION_ID), null);
         cleanBeforeDisconnect(userInitiated);
         checkAndReconnect(userInitiated);
-        if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
-            disconnectCallback.complete(true);
-        }
+        checkAndCompleteDisconnectCallback();
     }
 
     private <T> void findAndCompleteCallback(Predicate<CompletableCallback> callbackPredicate, T packetMessage) {
@@ -709,6 +714,7 @@ public class SteamClient extends CMClient {
                 setReconnectOnUserInitiated(false);
                 connectAndLoginAsync();
             } else {
+                checkAndCompleteDisconnectCallback();
                 credentialsProvider.stopResetBannedCredentialJob();
                 checkAndStopTaskHandlerJob();
                 checkAndShutdownCleanJob();
@@ -763,7 +769,7 @@ public class SteamClient extends CMClient {
 
     private void initTaskHandlerJob() {
         if (Objects.isNull(taskHandlerJob)) {
-            taskHandlerJob = new TaskHandlerJob(clientName);
+            taskHandlerJob = new TaskHandlerJob(clientName, taskCheckPeriod);
         }
     }
 
@@ -840,6 +846,12 @@ public class SteamClient extends CMClient {
             disconnectCallback.get();
         } catch (Exception e) {
             LOGGER.debug("{}: Disconnect callback completion was interrupted.", clientName);
+        }
+    }
+
+    private void checkAndCompleteDisconnectCallback() {
+        if (Objects.nonNull(disconnectCallback) && !disconnectCallback.isDone()) {
+            disconnectCallback.complete(true);
         }
     }
 }
