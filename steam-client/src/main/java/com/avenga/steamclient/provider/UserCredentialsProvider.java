@@ -59,7 +59,7 @@ public class UserCredentialsProvider {
     }
 
     public void returnBlockedKey(LogOnDetailsRecord detailsRecord) {
-        LOGGER.debug("{}: User {} was banned until: {}", clientName, detailsRecord.getLogOnDetails().getUsername(),
+        LOGGER.debug("{}: User {} was blocked until: {}", clientName, detailsRecord.getLogOnDetails().getUsername(),
                 detailsRecord.getBlockedTime());
         credentialRecords.remove(detailsRecord);
         bannedCredentialRecords.add(detailsRecord);
