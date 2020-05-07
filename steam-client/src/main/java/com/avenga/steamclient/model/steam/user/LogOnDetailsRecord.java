@@ -47,13 +47,17 @@ public class LogOnDetailsRecord {
 
     public void resetBlockedTime() {
         if (rateLimitFailuers > PROXY_MAX_RATE_LIMIT_FAILURES) {
-            rateLimitFailuers = 0;
+            resetRateLimitFailures();
         }
         this.blockedTime = null;
     }
 
     public void blockPermanently() {
         this.permanentlyBlocked = true;
+    }
+
+    public void resetRateLimitFailures() {
+        this.rateLimitFailuers = 0;
     }
 
     @Override

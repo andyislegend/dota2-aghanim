@@ -54,6 +54,7 @@ public class UserCredentialsProvider {
                     detailsRecord.getBlockedTime());
             bannedCredentialRecords.add(detailsRecord);
         } else {
+            detailsRecord.resetRateLimitFailures();
             credentialRecords.add(detailsRecord);
         }
     }
