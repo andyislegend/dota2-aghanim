@@ -12,17 +12,25 @@ import java.util.Objects;
 public class LogOnDetailsRecord {
     public static final long RECONNECT_TIMEOUT = 5000;
     private static final long LOG_ON_OVER_LIMIT_BLOCKED_TIME = 6;
+    private static final int PROXY_MAX_RATE_LIMIT_FAILURES = 5;
 
     private LogOnDetails logOnDetails;
     private Instant blockedTime;
     private boolean permanentlyBlocked;
+    private int rateLimitFailuers;
 
     public LogOnDetailsRecord(LogOnDetails logOnDetails) {
         this.logOnDetails = logOnDetails;
     }
 
-    public void overLogOnLimitBlock() {
-        this.blockedTime = Instant.now().plus(LOG_ON_OVER_LIMIT_BLOCKED_TIME, ChronoUnit.HOURS);
+    public void overLogOnLimitBlock(boolean isProxyEnabled) {
+        if (isProxyEnabled && rateLimitFailuers < PROXY_MAX_RATE_LIMIT_FAILURES) {
+            this.blockFor(RECONNECT_TIMEOUT);
+            rateLimitFailuers++;
+        } else {
+            this.blockedTime = Instant.now().plus(LOG_ON_OVER_LIMIT_BLOCKED_TIME, ChronoUnit.HOURS);
+            rateLimitFailuers++;
+        }
     }
 
     public void blockFor(long milliseconds) {
@@ -38,6 +46,9 @@ public class LogOnDetailsRecord {
     }
 
     public void resetBlockedTime() {
+        if (rateLimitFailuers > PROXY_MAX_RATE_LIMIT_FAILURES) {
+            rateLimitFailuers = 0;
+        }
         this.blockedTime = null;
     }
 

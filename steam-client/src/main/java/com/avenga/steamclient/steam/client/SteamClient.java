@@ -742,7 +742,7 @@ public class SteamClient extends CMClient {
                         currentLoggedUser.get().getLogOnDetails().getUsername());
                 break;
             case RateLimitExceeded:
-                currentLoggedUser.get().overLogOnLimitBlock();
+                currentLoggedUser.get().overLogOnLimitBlock(!getConnectionProxies().isEmpty());
                 LOGGER.debug("{}: User {} was blocked log on due to rate limit.", clientName,
                         currentLoggedUser.get().getLogOnDetails().getUsername());
                 break;
