@@ -81,13 +81,13 @@ Depends on platform add the appropriate cryptography dependency to your project:
     <dependency>
         <groupId>com.avenga</groupId>
         <artifactId>steam-client</artifactId>
-        <version>1.0.0</version>
+        <version>1.3.1</version>
     </dependency>
 </dependencies>
 ```
  **Gradle**
 ```groovy
-compile group: 'com.avenga', name: 'steam-client', version: '1.0.0'
+compile group: 'com.avenga', name: 'steam-client', version: '1.3.1'
 ```
 
 ## How to use DOTA2-Aghanim
