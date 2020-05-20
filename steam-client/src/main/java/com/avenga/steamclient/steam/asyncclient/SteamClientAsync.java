@@ -55,7 +55,7 @@ public class SteamClientAsync extends CMClient {
      * @param configuration The configuration to use for this client.
      */
     public SteamClientAsync(SteamConfiguration configuration) {
-        super(configuration, Constant.DEFAULT_CLIENT_NAME);
+        this(configuration, Constant.DEFAULT_CLIENT_NAME);
     }
 
     /**
@@ -65,7 +65,7 @@ public class SteamClientAsync extends CMClient {
      * @param clientName prefix for logger messages.
      */
     public SteamClientAsync(String clientName) {
-        super(new SteamConfiguration(), clientName);
+        this(new SteamConfiguration(), clientName);
     }
 
     /**
