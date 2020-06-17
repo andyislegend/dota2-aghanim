@@ -49,9 +49,12 @@ public class UserCredentialsProvider {
     }
 
     public void returnKey(LogOnDetailsRecord detailsRecord) {
-        if (detailsRecord.isBlocked() || detailsRecord.isPermanentlyBlocked()) {
+        if (detailsRecord.isBlocked()) {
             LOGGER.debug("{}: User {} was banned until: {}", clientName, detailsRecord.getLogOnDetails().getUsername(),
                     detailsRecord.getBlockedTime());
+            bannedCredentialRecords.add(detailsRecord);
+        } else if (detailsRecord.isPermanentlyBlocked()) {
+            LOGGER.debug("{}: User {} was permanently blocked", clientName, detailsRecord.getLogOnDetails().getUsername());
             bannedCredentialRecords.add(detailsRecord);
         } else {
             detailsRecord.resetRateLimitFailures();
