@@ -13,6 +13,7 @@ public class LogOnDetailsRecord {
     public static final long RECONNECT_TIMEOUT = 5000;
     private static final long LOG_ON_OVER_LIMIT_BLOCKED_TIME = 6;
     private static final int PROXY_MAX_RATE_LIMIT_FAILURES = 5;
+    private static final long UNAVAILABLE_ACCOUNT_BAN_PERIOD = 1;
 
     private LogOnDetails logOnDetails;
     private Instant blockedTime;
@@ -54,6 +55,10 @@ public class LogOnDetailsRecord {
 
     public void blockPermanently() {
         this.permanentlyBlocked = true;
+    }
+
+    public void blockUnavailableAccount() {
+        this.blockedTime = Instant.now().plus(UNAVAILABLE_ACCOUNT_BAN_PERIOD, ChronoUnit.DAYS);
     }
 
     public void resetRateLimitFailures() {
