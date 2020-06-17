@@ -728,9 +728,13 @@ public class SteamClient extends CMClient {
     private void checkAndBlockCredentials(EResult logOnResult) {
         switch (logOnResult) {
             case AccountDisabled:
+                currentLoggedUser.get().blockUnavailableAccount();
+                LOGGER.warn("{}: User {} account was disabled.", clientName,
+                        currentLoggedUser.get().getLogOnDetails().getUsername());
+                break;
             case InvalidPassword:
-                currentLoggedUser.get().blockPermanently();
-                LOGGER.warn("{}: User {} has invalid password or account was disabled.", clientName,
+                currentLoggedUser.get().blockUnavailableAccount();
+                LOGGER.warn("{}: User {} has invalid password", clientName,
                         currentLoggedUser.get().getLogOnDetails().getUsername());
                 break;
             case NoConnection:
