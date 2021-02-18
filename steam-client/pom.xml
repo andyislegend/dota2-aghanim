@@ -26,7 +26,7 @@
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <bcprov-jdk15on.version>1.64</bcprov-jdk15on.version>
         <Java-WebSocket.version>1.5.1</Java-WebSocket.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
         <cvurl-io.version>1.3</cvurl-io.version>
     </properties>
 
