@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lombok.version>1.18.10</lombok.version>
         <commons-lang3.version>3.9</commons-lang3.version>
-        <protobuf-java.version>3.11.1</protobuf-java.version>
+        <protobuf-java.version>3.16.3</protobuf-java.version>
         <steam-language-gen.version>1.0.0</steam-language-gen.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
